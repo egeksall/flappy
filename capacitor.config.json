@@ -1,0 +1,23 @@
+{
+  "appId": "com.flappybird.ultra",
+  "appName": "Flappy Bird Ultra",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "ios": {
+    "scrollEnabled": false,
+    "allowsLinkPreview": false,
+    "contentInset": "always",
+    "backgroundColor": "#0a0e17"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#0a0e17",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "overlaysWebView": true
+    }
+  }
+}

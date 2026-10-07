@@ -1,0 +1,18 @@
+{
+  "name": "Flappy Bird Ultra",
+  "short_name": "FlappyBird",
+  "description": "Premium arcade Flappy Bird clone with custom skins, medals, and high-performance physics.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0a0e17",
+  "theme_color": "#38bdf8",
+  "icons": [
+    {
+      "src": "assets/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
