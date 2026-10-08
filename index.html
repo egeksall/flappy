@@ -11,11 +11,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0a0a14">
     
-    <title>Fire Dragon - Free Flight & Evolution</title>
+    <title>Fire Dragon - 3-Lane Flight & Evolution</title>
     
     <!-- Icons -->
-    <link rel="icon" type="image/png" href="assets/dragon/dragon_baby_game.png">
-    <link rel="apple-touch-icon" href="assets/dragon/dragon_baby_game.png">
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link rel="apple-touch-icon" href="assets/icon.png">
     <link rel="manifest" href="manifest.json">
 
     <!-- Styles -->
@@ -28,7 +28,7 @@
     <div id="app-layout">
         <div class="ambient-glow"></div>
 
-        <!-- Portrait Game Canvas Frame -->
+        <!-- 16:9 Landscape Game Canvas Frame -->
         <main id="game-wrapper">
             <div id="game-container"></div>
         </main>
@@ -36,24 +36,24 @@
         <!-- Desktop Showcase & Controls Guide Panel -->
         <aside id="desktop-companion">
             <header class="companion-header">
-                <img src="assets/dragon/dragon_baby_game.png" alt="Baby Fire Dragon">
+                <img src="assets/icon.png" alt="Baby Fire Dragon">
                 <div>
                     <h3>Fire Dragon</h3>
-                    <p>Free Flight & Evolution</p>
+                    <p>Third-Person Forward Flight</p>
                 </div>
             </header>
             
             <div class="companion-badge">
-                <span class="dot">●</span> 2D Free Flight Dragon
+                <span class="dot">●</span> 3-Lane Landscape Flight
             </div>
 
             <div class="companion-section">
-                <h4>Controls</h4>
+                <h4>Movement Controls</h4>
                 <ul class="feature-list">
-                    <li><span class="icon">👆</span> Click / Touch & hold dragon</li>
-                    <li><span class="icon">↔️</span> Drag freely anywhere on screen</li>
-                    <li><span class="icon">🪶</span> Release to hover in place</li>
-                    <li><span class="icon">🚫</span> No gravity, no flapping</li>
+                    <li><span class="icon">⬅️</span> <strong>Left Arrow / A</strong>: Move 1 Lane Left</li>
+                    <li><span class="icon">➡️</span> <strong>Right Arrow / D</strong>: Move 1 Lane Right</li>
+                    <li><span class="icon">📱</span> <strong>On-Screen Buttons</strong>: [ ◀ ] and [ ▶ ]</li>
+                    <li><span class="icon">🛣️</span> <strong>3 Fixed Lanes</strong>: Left | Middle | Right</li>
                 </ul>
             </div>
 
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/audio.js?v=2.0"></script>
-    <script src="js/game.js?v=2.0"></script>
+    <script src="js/audio.js?v=3.0"></script>
+    <script src="js/game.js?v=3.0"></script>
 </body>
 </html>

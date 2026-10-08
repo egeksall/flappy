@@ -1,29 +1,32 @@
 // ============================================================
-// FIRE DRAGON - FREE FLIGHT & EVOLUTION ENGINE
-// Vertical 2D Game • Free Touch/Mouse Drag • No Gravity • No Flapping
+// FIRE DRAGON - 3RD PERSON 3-LANE FLIGHT & EVOLUTION ENGINE
+// 16:9 Landscape • Rear Camera • Forward Flight • 3 Fixed Lanes
 // ============================================================
 
 const CONFIG = {
-    GAME_WIDTH: 400,
-    GAME_HEIGHT: 700,
+    GAME_WIDTH: 800,
+    GAME_HEIGHT: 450,
 
-    // Dragon flight boundaries (padding from screen edges)
-    BOUNDS_PAD_X: 45,
-    BOUNDS_PAD_Y: 55,
+    // Horizon & 3D Projection
+    HORIZON_Y: 155,
+    VANISHING_X: 400,
 
-    // Natural hover / idle float motion
-    HOVER_AMPLITUDE: 6.0,
-    HOVER_FREQUENCY: 0.0035,
+    // 3 Fixed Flight Lanes (Left, Middle, Right) at Dragon Depth (Y = 335)
+    DRAGON_Y: 335,
+    LANE_X: [220, 400, 580], // 0: Left, 1: Middle, 2: Right
+    LANE_NAMES: ['LEFT', 'MIDDLE', 'RIGHT'],
 
-    // Drag responsiveness
-    DRAG_LERP: 0.22,
-    BANK_LERP: 0.12,
-    MAX_BANK_ANGLE: 0.22, // radians (~12.6 degrees)
+    // Forward Flight Speed (Pseudo-3D runway scroll)
+    FORWARD_SPEED: 0.85,
+    LANE_TWEEN_DURATION: 190, // ms for smooth lane change
+    BANK_ANGLE: 0.18, // radians roll tilt on lane shift
+
+    // Wing flap animation frame rate
+    FLAP_FPS: 7
 };
 
 // ============================================================
-// FIRE DRAGON - 3 EVOLUTIONARY STAGES
-// Same species, progressively larger, more powerful and majestic
+// 3 FIRE DRAGON REAR-VIEW EVOLUTION STAGES
 // ============================================================
 const DRAGON_STAGES = [
     {
@@ -32,16 +35,14 @@ const DRAGON_STAGES = [
         name: 'Baby Fire Dragon',
         shortName: 'Baby',
         icon: '🐣',
-        tag: 'Hatchling Stage',
-        desc: 'Small cute body, curious sapphire eyes, tiny fire tail',
-        textureKey: 'dragon_baby',
-        assetPath: 'assets/dragon/dragon_baby_game.png',
-        displayScale: 1.0,
-        hitRadius: 42,
-        titleColor: '#fde047',
-        badgeColor: '#eab308',
-        tailOffset: { x: -35, y: 15 },
-        emberRate: 1.0
+        tag: 'Hatchling Form',
+        sheetKey: 'dragon_rear_baby',
+        sheetPath: 'assets/dragon_rear/dragon_rear_baby_sheet.png',
+        frameWidth: 116,
+        frameHeight: 96,
+        tailOffset: { x: 0, y: 38 },
+        flameParticleScale: 0.45,
+        titleColor: '#fde047'
     },
     {
         stage: 2,
@@ -49,16 +50,14 @@ const DRAGON_STAGES = [
         name: 'Teen Fire Dragon',
         shortName: 'Teen',
         icon: '⚡',
-        tag: 'Adolescent Stage',
-        desc: 'Developing horns, expanding wings, energetic fiery breath',
-        textureKey: 'dragon_teen',
-        assetPath: 'assets/dragon/dragon_teen_game.png',
-        displayScale: 1.0,
-        hitRadius: 60,
-        titleColor: '#fb923c',
-        badgeColor: '#f97316',
-        tailOffset: { x: -55, y: 25 },
-        emberRate: 1.5
+        tag: 'Adolescent Form',
+        sheetKey: 'dragon_rear_teen',
+        sheetPath: 'assets/dragon_rear/dragon_rear_teen_sheet.png',
+        frameWidth: 168,
+        frameHeight: 138,
+        tailOffset: { x: 0, y: 56 },
+        flameParticleScale: 0.7,
+        titleColor: '#fb923c'
     },
     {
         stage: 3,
@@ -66,16 +65,14 @@ const DRAGON_STAGES = [
         name: 'Mature Fire Dragon',
         shortName: 'Mature',
         icon: '👑',
-        tag: 'Apex Elder Stage',
-        desc: 'Massive wings, sweeping crown horns, blazing inferno tail',
-        textureKey: 'dragon_mature',
-        assetPath: 'assets/dragon/dragon_mature_game.png',
-        displayScale: 1.0,
-        hitRadius: 82,
-        titleColor: '#f87171',
-        badgeColor: '#ef4444',
-        tailOffset: { x: -80, y: 35 },
-        emberRate: 2.2
+        tag: 'Apex Elder Form',
+        sheetKey: 'dragon_rear_mature',
+        sheetPath: 'assets/dragon_rear/dragon_rear_mature_sheet.png',
+        frameWidth: 236,
+        frameHeight: 192,
+        tailOffset: { x: 0, y: 80 },
+        flameParticleScale: 1.05,
+        titleColor: '#f87171'
     }
 ];
 
@@ -93,40 +90,53 @@ class PreloadScene extends Phaser.Scene {
 
         this.add.text(cx, cy - 30, 'FIRE DRAGON', {
             fontFamily: 'Impact, "Arial Black", sans-serif',
-            fontSize: '32px',
+            fontSize: '34px',
             color: '#f97316',
-            stroke: '#1e0802',
+            stroke: '#180702',
             strokeThickness: 6
         }).setOrigin(0.5);
 
         const progressBox = this.add.graphics();
         const progressBar = this.add.graphics();
-        progressBox.fillStyle(0x180b1e, 0.8);
-        progressBox.fillRoundedRect(cx - 110, cy + 20, 220, 16, 8);
+        progressBox.fillStyle(0x180b1e, 0.85);
+        progressBox.fillRoundedRect(cx - 130, cy + 20, 260, 16, 8);
 
         this.load.on('progress', (val) => {
             progressBar.clear();
             progressBar.fillStyle(0xf97316, 1);
-            progressBar.fillRoundedRect(cx - 108, cy + 22, 216 * val, 12, 6);
+            progressBar.fillRoundedRect(cx - 128, cy + 22, 256 * val, 12, 6);
         });
 
-        // Load 3 Dragon Stages
+        // Load 3 Rear-View Dragon Spritesheets
         DRAGON_STAGES.forEach(s => {
-            this.load.image(s.textureKey, s.assetPath);
+            this.load.spritesheet(s.sheetKey, s.sheetPath, {
+                frameWidth: s.frameWidth,
+                frameHeight: s.frameHeight
+            });
         });
 
-        // Load Background & Ember Particle
-        this.load.image('dragon_bg', 'assets/dragon/dragon_bg.png');
+        // Load Landscape Background & Particles
+        this.load.image('landscape_bg', 'assets/dragon_rear/landscape_bg.png');
         this.load.image('ember', 'assets/dragon/ember.png');
     }
 
     create() {
+        // Create Wing Flap Animations for all 3 rear dragon stages
+        DRAGON_STAGES.forEach(s => {
+            this.anims.create({
+                key: `${s.sheetKey}_fly`,
+                frames: this.anims.generateFrameNumbers(s.sheetKey, { frames: [0, 1, 0, 2] }),
+                frameRate: CONFIG.FLAP_FPS,
+                repeat: -1
+            });
+        });
+
         this.scene.start('DragonFlightScene');
     }
 }
 
 // ------------------------------------------------------------
-// 2. MAIN DRAGON FLIGHT SCENE
+// 2. THIRD-PERSON 3-LANE FLIGHT SCENE
 // ------------------------------------------------------------
 class DragonFlightScene extends Phaser.Scene {
     constructor() {
@@ -134,13 +144,11 @@ class DragonFlightScene extends Phaser.Scene {
     }
 
     create() {
+        // State
         this.currentStageIndex = 0; // Starts at Baby Fire Dragon (Stage 1)
-        this.isDragging = false;
-        this.targetX = CONFIG.GAME_WIDTH / 2;
-        this.targetY = CONFIG.GAME_HEIGHT / 2;
-        this.currentX = this.targetX;
-        this.currentY = this.targetY;
-        this.currentAngle = 0;
+        this.currentLane = 1;       // Starts in MIDDLE Lane (0: Left, 1: Middle, 2: Right)
+        this.isLaneTransitioning = false;
+        this.flightDistance = 0;
         this.hoverTime = 0;
 
         // Sound manager
@@ -148,297 +156,434 @@ class DragonFlightScene extends Phaser.Scene {
             window.soundManager.init();
         }
 
-        // 1. Atmospheric Background
-        this.bg = this.add.image(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2, 'dragon_bg');
+        // 1. Static Sky & Mountain Backdrop
+        this.bg = this.add.image(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT / 2, 'landscape_bg');
         this.bg.setDisplaySize(CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT);
 
-        // 2. Background ambient floating embers
-        this.createAmbientEmbers();
+        // 2. Pseudo-3D Runway / Canyon Ground Lines (Forward Motion)
+        this.groundGraphics = this.add.graphics();
+        this.initForwardRunway();
 
-        // 3. Dragon Tail Ember Emitter
-        this.tailEmitter = this.add.particles(this.currentX, this.currentY, 'ember', {
-            speed: { min: 20, max: 60 },
-            angle: { min: 140, max: 220 },
-            scale: { start: 0.5, end: 0.05 },
+        // 3. Fast Forward Speed Streaks & Embers
+        this.createSpeedParticles();
+
+        // 4. Tail Flame Ember Particle Emitter
+        this.tailEmitter = this.add.particles(CONFIG.LANE_X[this.currentLane], CONFIG.DRAGON_Y, 'ember', {
+            speed: { min: 40, max: 110 },
+            angle: { min: 70, max: 110 }, // Streams downward/towards camera
+            scale: { start: 0.6, end: 0.05 },
             alpha: { start: 0.9, end: 0 },
-            lifespan: 650,
+            lifespan: 550,
             blendMode: 'ADD',
-            frequency: 70
+            frequency: 45
         });
+        this.tailEmitter.setDepth(15);
 
-        // 4. Dragon Sprite
-        this.dragon = this.add.image(this.currentX, this.currentY, DRAGON_STAGES[0].textureKey);
+        // 5. Dragon Sprite (Rear View, Centered in Middle Lane)
+        const initialStage = DRAGON_STAGES[this.currentStageIndex];
+        this.dragon = this.add.sprite(CONFIG.LANE_X[this.currentLane], CONFIG.DRAGON_Y, initialStage.sheetKey);
         this.dragon.setOrigin(0.5, 0.5);
-        this.dragon.setInteractive({ useHandCursor: true });
+        this.dragon.setDepth(20);
+        this.dragon.play(`${initialStage.sheetKey}_fly`);
 
-        // Grab / Drag Touch Indicator Ring
-        this.grabRing = this.add.graphics();
-        this.grabRing.setDepth(5);
-        this.grabRing.setVisible(false);
+        // 6. Setup Keyboard Controls (Left/Right Arrows & A/D)
+        this.setupKeyboardControls();
 
-        // 5. Setup Drag Controls (Mouse & Touch)
-        this.setupDragControls();
+        // 7. On-Screen Touch Buttons (Left & Right Arrows) & UI
+        this.createOnScreenControls();
+        this.createHUD();
 
-        // 6. Evolution Particle Burst Emitter (for stage evolution)
-        this.evolveEmitter = this.add.particles(0, 0, 'ember', {
-            speed: { min: 80, max: 260 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.9, end: 0.05 },
-            alpha: { start: 1, end: 0 },
-            lifespan: 800,
+        // Welcome Toast
+        this.showEvolutionToast(initialStage);
+    }
+
+    // ------------------------------------------------------------
+    // PSEUDO-3D FORWARD RUNWAY / CANYON PERSPECTIVE
+    // ------------------------------------------------------------
+    initForwardRunway() {
+        // Perspective horizontal ties scrolling toward camera
+        this.runwayTies = [];
+        const count = 16;
+        for (let i = 0; i < count; i++) {
+            this.runwayTies.push((i / count));
+        }
+    }
+
+    updateForwardRunway(delta) {
+        this.groundGraphics.clear();
+
+        const H_Y = CONFIG.HORIZON_Y;
+        const V_X = CONFIG.VANISHING_X;
+        const B_Y = CONFIG.GAME_HEIGHT;
+
+        // Advance ties towards camera
+        const speed = 0.00045 * delta;
+        for (let i = 0; i < this.runwayTies.length; i++) {
+            this.runwayTies[i] += speed;
+            if (this.runwayTies[i] >= 1.0) {
+                this.runwayTies[i] -= 1.0;
+            }
+        }
+
+        // 1. Draw 3-Lane Perspective Guidelines
+        // 4 boundary lines: Left Outer, Left/Mid Divider, Mid/Right Divider, Right Outer
+        const bottomXs = [70, 290, 510, 730];
+        
+        // Magma canyon floor base
+        this.groundGraphics.fillStyle(0x180914, 0.9);
+        this.groundGraphics.beginPath();
+        this.groundGraphics.moveTo(V_X - 60, H_Y);
+        this.groundGraphics.lineTo(V_X + 60, H_Y);
+        this.groundGraphics.lineTo(bottomXs[3] + 40, B_Y);
+        this.groundGraphics.lineTo(bottomXs[0] - 40, B_Y);
+        this.groundGraphics.closePath();
+        this.groundGraphics.fillPath();
+
+        // Active Lane Glow Floor Highlight under current lane
+        const lIdx = this.currentLane;
+        const laneLeftBX = bottomXs[lIdx];
+        const laneRightBX = bottomXs[lIdx + 1];
+        const topLX = V_X - 35 + lIdx * 23;
+        const topRX = V_X - 35 + (lIdx + 1) * 23;
+
+        this.groundGraphics.fillStyle(0xf97316, 0.12);
+        this.groundGraphics.beginPath();
+        this.groundGraphics.moveTo(topLX, H_Y);
+        this.groundGraphics.lineTo(topRX, H_Y);
+        this.groundGraphics.lineTo(laneRightBX, B_Y);
+        this.groundGraphics.lineTo(laneLeftBX, B_Y);
+        this.groundGraphics.closePath();
+        this.groundGraphics.fillPath();
+
+        // Draw Lane Divider Lines
+        for (let j = 0; j < bottomXs.length; j++) {
+            const bx = bottomXs[j];
+            const tx = V_X - 40 + j * 26;
+            const isOuter = (j === 0 || j === bottomXs.length - 1);
+
+            this.groundGraphics.lineStyle(isOuter ? 3 : 2, isOuter ? 0xf97316 : 0xfb923c, isOuter ? 0.8 : 0.4);
+            this.groundGraphics.lineBetween(tx, H_Y, bx, B_Y);
+        }
+
+        // 2. Draw Moving Horizontal Magma Ridge Ties
+        // In 3D: z from 1 (horizon) to 0 (camera). y = H_Y + (B_Y - H_Y) * (t^2.4)
+        for (let t of this.runwayTies) {
+            const progress = Math.pow(t, 2.3);
+            const curY = H_Y + (B_Y - H_Y) * progress;
+            const curWidth = 80 + (740 - 80) * progress;
+            const curLeft = V_X - curWidth / 2;
+            const curRight = V_X + curWidth / 2;
+
+            const alpha = Math.min(1.0, progress * 1.5) * 0.7;
+            const thickness = Math.max(1, Math.floor(progress * 5));
+
+            this.groundGraphics.lineStyle(thickness, 0xf97316, alpha);
+            this.groundGraphics.lineBetween(curLeft, curY, curRight, curY);
+
+            // Glowing magma dots on dividers
+            const dotStep = curWidth / 3;
+            for (let d = 1; d <= 2; d++) {
+                const dotX = curLeft + d * dotStep;
+                this.groundGraphics.fillStyle(0xffedd5, alpha);
+                this.groundGraphics.fillCircle(dotX, curY, Math.max(1.5, progress * 4.5));
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // SPEED STREAKS & EMBERS
+    // ------------------------------------------------------------
+    createSpeedParticles() {
+        this.speedParticles = this.add.particles(0, 0, 'ember', {
+            x: { min: 250, max: 550 },
+            y: { min: CONFIG.HORIZON_Y + 10, max: CONFIG.HORIZON_Y + 40 },
+            speedX: { min: -180, max: 180 },
+            speedY: { min: 140, max: 320 },
+            scale: { start: 0.15, end: 0.8 },
+            alpha: { start: 0.8, end: 0 },
+            lifespan: 1100,
             blendMode: 'ADD',
-            emitting: false
+            frequency: 90
         });
-        this.evolveEmitter.setDepth(20);
-
-        // 7. UI Overlay: Header & Evolution Stage Switcher
-        this.createUI();
-
-        // Flash banner welcome
-        this.showEvolutionToast(DRAGON_STAGES[0]);
+        this.speedParticles.setDepth(10);
     }
 
     // ------------------------------------------------------------
-    // AMBIENT EMBERS
+    // 3-LANE MOVEMENT LOGIC
     // ------------------------------------------------------------
-    createAmbientEmbers() {
-        this.ambientEmbers = this.add.particles(0, 0, 'ember', {
-            x: { min: 0, max: CONFIG.GAME_WIDTH },
-            y: { min: CONFIG.GAME_HEIGHT + 20, max: CONFIG.GAME_HEIGHT + 60 },
-            speedY: { min: -40, max: -90 },
-            speedX: { min: -15, max: 25 },
-            scale: { start: 0.35, end: 0.05 },
-            alpha: { start: 0.6, end: 0 },
-            lifespan: 7000,
-            blendMode: 'ADD',
-            frequency: 450
+    shiftLane(direction) {
+        // direction: -1 (LEFT) or +1 (RIGHT)
+        const targetLane = this.currentLane + direction;
+
+        // 1. Boundary Check: Cannot move beyond Left (0) or Right (2)
+        if (targetLane < 0 || targetLane > 2) {
+            // Reached outer boundary: subtle shudder feedback
+            this.tweens.add({
+                targets: this.dragon,
+                x: this.dragon.x + direction * 10,
+                duration: 60,
+                yoyo: true,
+                ease: 'Quad.easeInOut'
+            });
+            return false;
+        }
+
+        // 2. Strict Single-Lane Step (cannot skip lanes)
+        this.currentLane = targetLane;
+        const targetX = CONFIG.LANE_X[this.currentLane];
+
+        // 3. Audio & Haptic Feedback
+        if (window.soundManager && window.soundManager.playDragonGrab) {
+            window.soundManager.playDragonGrab();
+        }
+
+        // 4. Smooth Transition Tween with Banking Roll
+        this.isLaneTransitioning = true;
+        const bankRoll = direction * CONFIG.BANK_ANGLE;
+
+        // Kill active position tweens
+        this.tweens.killTweensOf(this.dragon);
+
+        // Move to target lane X
+        this.tweens.add({
+            targets: this.dragon,
+            x: targetX,
+            duration: CONFIG.LANE_TWEEN_DURATION,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                this.isLaneTransitioning = false;
+            }
         });
-        this.ambientEmbers.setDepth(2);
+
+        // Roll into banking tilt, then level out
+        this.dragon.setRotation(bankRoll);
+        this.tweens.add({
+            targets: this.dragon,
+            rotation: 0,
+            duration: CONFIG.LANE_TWEEN_DURATION * 1.3,
+            ease: 'Sine.easeOut'
+        });
+
+        // Update HUD
+        this.updateLaneHUD();
+        return true;
     }
 
     // ------------------------------------------------------------
-    // DRAG CONTROLS (DESKTOP MOUSE + MOBILE TOUCH)
+    // KEYBOARD CONTROLS (LEFT / RIGHT ARROWS + A / D)
     // ------------------------------------------------------------
-    setupDragControls() {
-        // Pointer down on dragon or near dragon
-        this.input.on('pointerdown', (pointer) => {
-            const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, this.currentX, this.currentY);
-            const currentStage = DRAGON_STAGES[this.currentStageIndex];
-            
-            // Allow grab if clicked on/near dragon (within hit radius + generous margin for mobile fingers)
-            if (dist <= currentStage.hitRadius + 35) {
-                this.isDragging = true;
-                this.dragOffsetX = this.currentX - pointer.x;
-                this.dragOffsetY = this.currentY - pointer.y;
+    setupKeyboardControls() {
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-                // Subtle scale punch feedback on grab
-                this.tweens.add({
-                    targets: this.dragon,
-                    scaleX: currentStage.displayScale * 1.08,
-                    scaleY: currentStage.displayScale * 1.08,
-                    duration: 120,
-                    yoyo: true
-                });
+        // Single press event listeners to prevent accidental multi-lane skipping
+        this.input.keyboard.on('keydown-LEFT', () => this.shiftLane(-1));
+        this.input.keyboard.on('keydown-A', () => this.shiftLane(-1));
 
-                if (window.soundManager && window.soundManager.playDragonGrab) {
-                    window.soundManager.playDragonGrab();
-                }
-            }
-        });
-
-        // Pointer move updates target position when dragging
-        this.input.on('pointermove', (pointer) => {
-            if (this.isDragging) {
-                // Apply drag offset so it doesn't snap abruptly to center of finger
-                let nx = pointer.x + (this.dragOffsetX || 0);
-                let ny = pointer.y + (this.dragOffsetY || 0);
-
-                // Clamp within vertical screen bounds so dragon stays on screen
-                const padX = CONFIG.BOUNDS_PAD_X;
-                const padY = CONFIG.BOUNDS_PAD_Y + 40; // Top header space
-                const botPad = CONFIG.BOUNDS_PAD_Y + 60; // Bottom UI space
-                
-                this.targetX = Phaser.Math.Clamp(nx, padX, CONFIG.GAME_WIDTH - padX);
-                this.targetY = Phaser.Math.Clamp(ny, padY, CONFIG.GAME_HEIGHT - botPad);
-            }
-        });
-
-        // Pointer up releases dragon
-        this.input.on('pointerup', () => {
-            if (this.isDragging) {
-                this.isDragging = false;
-                this.grabRing.setVisible(false);
-            }
-        });
-
-        this.input.on('pointerupoutside', () => {
-            if (this.isDragging) {
-                this.isDragging = false;
-                this.grabRing.setVisible(false);
-            }
-        });
+        this.input.keyboard.on('keydown-RIGHT', () => this.shiftLane(+1));
+        this.input.keyboard.on('keydown-D', () => this.shiftLane(+1));
     }
 
     // ------------------------------------------------------------
-    // EVOLUTION STAGE TRANSITION
+    // ON-SCREEN TOUCH CONTROLS (LEFT & RIGHT ARROW BUTTONS)
+    // ------------------------------------------------------------
+    createOnScreenControls() {
+        const btnY = CONFIG.GAME_HEIGHT - 65;
+        const btnW = 105;
+        const btnH = 62;
+
+        // Left Arrow Button (Bottom-Left)
+        this.btnLeft = this.createDirectionButton(80, btnY, '◀ LEFT', -1, btnW, btnH);
+
+        // Right Arrow Button (Bottom-Right)
+        this.btnRight = this.createDirectionButton(CONFIG.GAME_WIDTH - 80, btnY, 'RIGHT ▶', +1, btnW, btnH);
+    }
+
+    createDirectionButton(x, y, labelText, direction, w, h) {
+        const container = this.add.container(x, y).setDepth(35);
+
+        const bg = this.add.graphics();
+        bg.fillStyle(0x0e0816, 0.82);
+        bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
+        bg.lineStyle(2, 0xf97316, 0.65);
+        bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
+        container.add(bg);
+
+        const text = this.add.text(0, 0, labelText, {
+            fontFamily: 'Impact, "Arial Black", sans-serif',
+            fontSize: '18px',
+            color: '#ffffff',
+            letterSpacing: 1
+        }).setOrigin(0.5, 0.5);
+        container.add(text);
+
+        container.setSize(w, h);
+        container.setInteractive({ useHandCursor: true });
+
+        container.on('pointerdown', () => {
+            // Tap feedback
+            bg.clear();
+            bg.fillStyle(0xf97316, 0.95);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
+            bg.lineStyle(2, 0xffedd5, 1);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
+            text.setColor('#180702');
+
+            // Trigger same underlying shiftLane
+            this.shiftLane(direction);
+        });
+
+        const resetBtn = () => {
+            bg.clear();
+            bg.fillStyle(0x0e0816, 0.82);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
+            bg.lineStyle(2, 0xf97316, 0.65);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
+            text.setColor('#ffffff');
+        };
+
+        container.on('pointerup', resetBtn);
+        container.on('pointerout', resetBtn);
+
+        return container;
+    }
+
+    // ------------------------------------------------------------
+    // EVOLUTION STAGE SWITCHER & HUD
     // ------------------------------------------------------------
     setDragonStage(stageIndex) {
         if (stageIndex < 0 || stageIndex >= DRAGON_STAGES.length) return;
         this.currentStageIndex = stageIndex;
         const stage = DRAGON_STAGES[stageIndex];
 
-        // 1. Fiery explosion particle burst at dragon position
-        this.evolveEmitter.emitParticleAt(this.currentX, this.currentY, 40);
-
-        // 2. Play evolution sound
+        // Sound & FX
         if (window.soundManager && window.soundManager.playDragonEvolve) {
             window.soundManager.playDragonEvolve();
         }
 
-        // 3. Texture swap and growth transition tween
-        this.dragon.setTexture(stage.textureKey);
+        // Texture Swap to new Rear-View Stage
+        this.dragon.setTexture(stage.sheetKey);
+        this.dragon.play(`${stage.sheetKey}_fly`);
 
-        this.dragon.setScale(0.3);
+        // Scale punch tween
+        this.dragon.setScale(0.4);
         this.tweens.add({
             targets: this.dragon,
-            scaleX: stage.displayScale,
-            scaleY: stage.displayScale,
-            duration: 380,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            duration: 320,
             ease: 'Back.easeOut'
         });
 
-        // 4. Update tail particles rate & offset
-        this.tailEmitter.setFrequency(Math.max(25, 75 / stage.emberRate));
+        // Tail particle adjustment
+        this.tailEmitter.setScale({ start: stage.flameParticleScale, end: 0.05 });
 
-        // 5. Update UI Buttons & Banner
         this.updateStageUI();
         this.showEvolutionToast(stage);
     }
 
-    // ------------------------------------------------------------
-    // UI OVERLAY: HEADER & EVOLUTION SELECTOR
-    // ------------------------------------------------------------
-    createUI() {
-        const topY = 24;
+    createHUD() {
+        // Top Header Bar
+        const topBg = this.add.graphics();
+        topBg.fillStyle(0x0a0812, 0.82);
+        topBg.fillRoundedRect(160, 10, 480, 48, 14);
+        topBg.lineStyle(1.5, 0xf97316, 0.5);
+        topBg.strokeRoundedRect(160, 10, 480, 48, 14);
+        topBg.setDepth(30);
 
-        // Top Glass Container
-        const headerBg = this.add.graphics();
-        headerBg.fillStyle(0x0a0a14, 0.7);
-        headerBg.fillRoundedRect(16, 12, CONFIG.GAME_WIDTH - 32, 54, 14);
-        headerBg.lineStyle(1, 0xffaa44, 0.3);
-        headerBg.strokeRoundedRect(16, 12, CONFIG.GAME_WIDTH - 32, 54, 14);
-        headerBg.setDepth(30);
-
-        // Title Text
-        this.titleText = this.add.text(CONFIG.GAME_WIDTH / 2, 28, '🔥 FIRE DRAGON', {
+        // Title / Lane status
+        this.titleText = this.add.text(400, 24, '🔥 FIRE DRAGON • MIDDLE LANE', {
             fontFamily: 'Impact, "Arial Black", sans-serif',
-            fontSize: '18px',
+            fontSize: '17px',
             color: '#f97316',
             letterSpacing: 1
         }).setOrigin(0.5, 0.5).setDepth(31);
 
-        // Subtitle / Drag Hint Text
-        this.subtitleText = this.add.text(CONFIG.GAME_WIDTH / 2, 48, 'Drag freely anywhere • No gravity', {
+        this.subtitleText = this.add.text(400, 44, 'Press ◀ Left / Right ▶ Arrows or Touch Buttons to Change Lanes', {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             fontSize: '11px',
             color: '#fdba74'
         }).setOrigin(0.5, 0.5).setDepth(31);
 
-        // Bottom Evolution Selector Bar
-        this.createEvolutionBar();
+        // Top-Right Evolution Stage Selector Buttons
+        this.createStageSelectorButtons();
     }
 
-    createEvolutionBar() {
-        const barY = CONFIG.GAME_HEIGHT - 66;
-
-        const barBg = this.add.graphics();
-        barBg.fillStyle(0x0c0c16, 0.88);
-        barBg.fillRoundedRect(16, barY - 14, CONFIG.GAME_WIDTH - 32, 64, 18);
-        barBg.lineStyle(1, 0xf97316, 0.4);
-        barBg.strokeRoundedRect(16, barY - 14, CONFIG.GAME_WIDTH - 32, 64, 18);
-        barBg.setDepth(30);
+    createStageSelectorButtons() {
+        const btnW = 86;
+        const btnH = 34;
+        const startX = 270;
+        const btnY = CONFIG.GAME_HEIGHT - 30;
 
         this.stageButtons = [];
-        const btnWidth = 110;
-        const spacing = 10;
-        const totalW = (btnWidth * 3) + (spacing * 2);
-        const startX = (CONFIG.GAME_WIDTH - totalW) / 2 + (btnWidth / 2);
-
         DRAGON_STAGES.forEach((stage, idx) => {
-            const bx = startX + idx * (btnWidth + spacing);
-            const by = barY + 18;
+            const bx = startX + idx * (btnW + 10);
+            const container = this.add.container(bx, btnY).setDepth(35);
 
-            const btnContainer = this.add.container(bx, by).setDepth(32);
-
-            const btnBg = this.add.graphics();
-            btnContainer.add(btnBg);
+            const bg = this.add.graphics();
+            container.add(bg);
 
             const label = this.add.text(0, 0, `${stage.icon} ${stage.shortName}`, {
                 fontFamily: 'Impact, "Arial Black", sans-serif',
-                fontSize: '14px',
+                fontSize: '13px',
                 color: '#ffffff'
             }).setOrigin(0.5, 0.5);
-            btnContainer.add(label);
+            container.add(label);
 
-            btnContainer.setSize(btnWidth, 38);
-            btnContainer.setInteractive({ useHandCursor: true });
+            container.setSize(btnW, btnH);
+            container.setInteractive({ useHandCursor: true });
 
-            btnContainer.on('pointerdown', () => {
+            container.on('pointerdown', () => {
                 this.setDragonStage(idx);
             });
 
-            this.stageButtons.push({
-                container: btnContainer,
-                bg: btnBg,
-                label: label,
-                stage: stage
-            });
+            this.stageButtons.push({ container, bg, label, stage, w: btnW, h: btnH });
         });
 
         this.updateStageUI();
     }
 
     updateStageUI() {
-        const currentStage = DRAGON_STAGES[this.currentStageIndex];
+        const stage = DRAGON_STAGES[this.currentStageIndex];
+        this.updateLaneHUD();
 
-        // Update Title and Subtitle
-        if (this.titleText) {
-            this.titleText.setText(`🔥 ${currentStage.name.toUpperCase()}`);
-            this.titleText.setColor(currentStage.titleColor);
-        }
-
-        // Highlight selected evolution button
-        this.stageButtons.forEach((btn, idx) => {
+        this.stageButtons.forEach((b, idx) => {
             const isSelected = idx === this.currentStageIndex;
-            btn.bg.clear();
-
+            b.bg.clear();
             if (isSelected) {
-                btn.bg.fillStyle(0xf97316, 1);
-                btn.bg.fillRoundedRect(-55, -19, 110, 38, 12);
-                btn.bg.lineStyle(2, 0xffedd5, 0.9);
-                btn.bg.strokeRoundedRect(-55, -19, 110, 38, 12);
-                btn.label.setColor('#ffffff');
+                b.bg.fillStyle(0xf97316, 1);
+                b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+                b.bg.lineStyle(2, 0xffedd5, 0.9);
+                b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+                b.label.setColor('#ffffff');
             } else {
-                btn.bg.fillStyle(0x27192b, 0.8);
-                btn.bg.fillRoundedRect(-55, -19, 110, 38, 12);
-                btn.bg.lineStyle(1, 0xffaa44, 0.2);
-                btn.bg.strokeRoundedRect(-55, -19, 110, 38, 12);
-                btn.label.setColor('#cbd5e1');
+                b.bg.fillStyle(0x180b1e, 0.85);
+                b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+                b.bg.lineStyle(1, 0xf97316, 0.3);
+                b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+                b.label.setColor('#cbd5e1');
             }
         });
     }
 
-    showEvolutionToast(stage) {
-        if (this.toastContainer) {
-            this.toastContainer.destroy();
+    updateLaneHUD() {
+        const stage = DRAGON_STAGES[this.currentStageIndex];
+        const laneName = CONFIG.LANE_NAMES[this.currentLane];
+        if (this.titleText) {
+            this.titleText.setText(`🔥 ${stage.name.toUpperCase()} • ${laneName} LANE`);
+            this.titleText.setColor(stage.titleColor);
         }
+    }
 
-        this.toastContainer = this.add.container(CONFIG.GAME_WIDTH / 2, 95).setDepth(40);
+    showEvolutionToast(stage) {
+        if (this.toastContainer) this.toastContainer.destroy();
 
+        this.toastContainer = this.add.container(400, 85).setDepth(40);
         const toastBg = this.add.graphics();
         toastBg.fillStyle(0x180b1e, 0.92);
         toastBg.fillRoundedRect(-140, -18, 280, 36, 18);
-        toastBg.lineStyle(1.5, 0xf97316, 0.8);
+        toastBg.lineStyle(1.5, 0xf97316, 0.85);
         toastBg.strokeRoundedRect(-140, -18, 280, 36, 18);
         this.toastContainer.add(toastBg);
 
@@ -454,10 +599,10 @@ class DragonFlightScene extends Phaser.Scene {
         this.tweens.add({
             targets: this.toastContainer,
             alpha: 1,
-            y: 90,
+            y: 80,
             duration: 250,
             yoyo: true,
-            hold: 1800,
+            hold: 1600,
             onComplete: () => {
                 if (this.toastContainer) this.toastContainer.destroy();
             }
@@ -465,66 +610,28 @@ class DragonFlightScene extends Phaser.Scene {
     }
 
     // ------------------------------------------------------------
-    // GAME LOOP (FRAME UPDATE)
+    // FRAME UPDATE
     // ------------------------------------------------------------
     update(time, delta) {
         this.hoverTime += delta;
-        const currentStage = DRAGON_STAGES[this.currentStageIndex];
+        const stage = DRAGON_STAGES[this.currentStageIndex];
 
-        // 1. Hover / floating sinusoidal motion
-        // Gentle organic bobbing while hovering
-        const hoverOffsetY = Math.sin(this.hoverTime * CONFIG.HOVER_FREQUENCY) * CONFIG.HOVER_AMPLITUDE;
+        // 1. Update Pseudo-3D Forward Runway (Continuous Forward Motion)
+        this.updateForwardRunway(delta);
 
-        // 2. Smooth Dragon Position Following (LERP)
-        const prevX = this.currentX;
-        const prevY = this.currentY;
+        // 2. Flight bobbing (Subtle vertical hover oscillation)
+        const hoverOffsetY = Math.sin(this.hoverTime * 0.004) * 4.5;
+        this.dragon.y = CONFIG.DRAGON_Y + hoverOffsetY;
 
-        this.currentX += (this.targetX - this.currentX) * CONFIG.DRAG_LERP;
-        this.currentY += (this.targetY - this.currentY) * CONFIG.DRAG_LERP;
-
-        // 3. Dynamic banking/pitch based on horizontal and vertical drag velocity
-        const vx = this.currentX - prevX;
-        const vy = this.currentY - prevY;
-
-        // Dragon tilts slightly up when ascending, down when descending, and banks forward when moving right
-        let targetAngle = 0;
-        if (this.isDragging) {
-            targetAngle = Phaser.Math.Clamp(vy * 0.04, -CONFIG.MAX_BANK_ANGLE, CONFIG.MAX_BANK_ANGLE);
-        } else {
-            // Gentle hovering breathing tilt
-            targetAngle = Math.sin(this.hoverTime * CONFIG.HOVER_FREQUENCY * 0.7) * 0.03;
-        }
-
-        this.currentAngle += (targetAngle - this.currentAngle) * CONFIG.BANK_LERP;
-        this.dragon.setRotation(this.currentAngle);
-
-        // Apply position with hover
-        this.dragon.setPosition(this.currentX, this.currentY + hoverOffsetY);
-
-        // 4. Update Tail Particle Emitter position relative to dragon rotation & stage offset
-        const cos = Math.cos(this.currentAngle);
-        const sin = Math.sin(this.currentAngle);
-        const tox = currentStage.tailOffset.x;
-        const toy = currentStage.tailOffset.y;
-
-        const tailWorldX = this.currentX + (tox * cos - toy * sin);
-        const tailWorldY = (this.currentY + hoverOffsetY) + (tox * sin + toy * cos);
-        this.tailEmitter.setPosition(tailWorldX, tailWorldY);
-
-        // 5. Update grab indicator ring when dragging
-        if (this.isDragging) {
-            this.grabRing.setVisible(true);
-            this.grabRing.clear();
-            this.grabRing.lineStyle(2, 0xf97316, 0.45);
-            this.grabRing.strokeCircle(this.currentX, this.currentY + hoverOffsetY, currentStage.hitRadius + 10);
-        } else {
-            this.grabRing.setVisible(false);
-        }
+        // 3. Update Tail Ember Emitter Position to follow dragon
+        const tx = this.dragon.x + stage.tailOffset.x;
+        const ty = this.dragon.y + stage.tailOffset.y;
+        this.tailEmitter.setPosition(tx, ty);
     }
 }
 
 // ============================================================
-// PHASER GAME CONFIGURATION
+// PHASER GAME CONFIGURATION (16:9 LANDSCAPE)
 // ============================================================
 const gameConfig = {
     type: Phaser.AUTO,
@@ -538,7 +645,7 @@ const gameConfig = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 0 }, // STRICTLY ZERO GRAVITY
+            gravity: { y: 0 },
             debug: false
         }
     },
