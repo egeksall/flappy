@@ -1,52 +1,63 @@
-# 🐦 Flappy Bird Ultra (Phaser 3 + Capacitor)
+# 🏹 Angry Flappy (Flappy Bird + Angry Birds Hybrid)
 
-> A polished, arcade-grade Flappy Bird clone built with the **Phaser 3 engine**, customized for the **Apple App Store** (iOS) and **Google Play Store** (Android) using **Capacitor**.
-
-![Showcase](assets/showcase.jpg)
+> A polished hybrid arcade game combining the iconic mechanics of **Angry Birds** (slingshot aiming & launch, material destruction) and **Flappy Bird** (tap-to-flap flying & gravity). Built on **Phaser 3** and optimized for both desktop and mobile web.
 
 ---
 
-## ✨ Features
+## 🎮 Core Gameplay Flow (v1.1)
 
-- **🎮 Phaser 3 Engine (High-Performance Arcade Physics)**: 60 FPS locked, delta-time aware, fluid gravity, responsive dive-and-rise rotation.
-- **🎨 4 Unlockable Bird Skins**:
-  - 🐥 **Classic Pip**: Ready from the start.
-  - 🤖 **Cyber Neon**: Unlocks at High Score 10.
-  - 🔥 **Crimson Ember**: Unlocks at High Score 25.
-  - 👑 **Golden Phoenix**: Unlocks at High Score 50.
-- **🎖️ Dynamic Medal System**:
-  - 🥉 Bronze Medal (10+ pts)
-  - 🥈 Silver Medal (20+ pts)
-  - 🥇 Gold Medal (35+ pts)
-  - 💎 Platinum Medal (50+ pts)
-- **🔊 Procedural Web Audio Engine**: Zero missing audio files or network lag. Pure Web Audio synthesis for flap swoosh, coin chimes, hit impacts, and high score fanfares.
-- **⚡ Zero-Lag Haptics**: Subtle vibrations on flap, score, and collisions using the Vibration API.
-- **📱 100% Mobile & App Store Optimized**:
-  - `viewport-fit=cover` for iPhone notch and Dynamic Island.
-  - Complete elimination of rubber-band scrolling, pull-to-refresh, and unwanted gestures.
-  - Fully offline capable — all engines and assets are self-contained.
+1. **Main Menu Bird Selection (Fixed & Enhanced)**:
+   - 🔵 **Blue Bird**: Specializes in destroying **Glass 🪟**.
+   - 🟡 **Yellow Bird**: Specializes in destroying **Wood 🪵**.
+   - ⚫ **Black Bird**: Specializes in destroying **Stone 🪨**.
+   - **Bulletproof Selection**: Tap/click anywhere on the bird cards or use the `◀` and `▶` arrows. The selected bird receives a vibrant active highlight, glowing pedestal, and `"✔ SELECTED"` badge. Whichever bird you choose is passed directly into the slingshot!
+
+2. **Angry Birds Slingshot Launch**:
+   - The selected bird begins loaded inside a wooden slingshot anchored on the ground.
+   - **Click / Touch & Drag** the bird backward in any direction or angle.
+   - Dynamic latex rubber bands stretch in real time between the slingshot prongs and leather pouch.
+   - Ballistic trajectory dots preview the projected launch arc.
+   - **Release** to launch the bird into flight!
+   - **Slingshot Disappears**: Upon launch, the slingshot smoothly vanishes and is removed from the flight.
+
+3. **Flappy Bird Flying & Gravity**:
+   - **Tap / Click / Spacebar** to flap wings and gain upward altitude.
+   - **Continuous Gravity** pulls the bird down when not flapping.
+   - Smooth diving and rising rotation physics matching vertical velocity.
+
+4. **Solid Vertical Obstacles (No Gaps / Openings)**:
+   - As the bird flies, it encounters solid vertical structures spanning from ceiling to ground.
+   - Three distinct materials with custom textures:
+     - 🪟 **Glass**: Translucent crystal pane with cyan gleam.
+     - 🪵 **Wood**: Reinforced planks with steel brackets & rivets.
+     - 🪨 **Stone**: Heavy chiseled granite masonry bricks.
+
+5. **Bird vs. Material Destruction Rules**:
+   - 🔵 **Blue Bird + 🪟 Glass** → ✅ **Glass Shatters!** Explosive glass shards, crystal audio fx, and bird soars right through!
+   - 🟡 **Yellow Bird + 🪵 Wood** → ✅ **Wood Splinters!** Flying wood splinters, crunchy cracking audio, and bird continues flying!
+   - ⚫ **Black Bird + 🪨 Stone** → ✅ **Stone Smashed!** Flying rock rubble chunks, deep stone smash rumble, and bird breaks through!
+   - ❌ **Incompatible Hits** (e.g. Blue Bird hitting Wood or Stone) → Solid barrier crash! Feathers explode, impact sound plays, and a crash modal explains which bird can break that material.
 
 ---
 
 ## 🕹️ Controls
 
-- **Desktop**: Click mouse, press `Spacebar`, or press `Up Arrow`.
-- **Mobile / iOS**: Tap anywhere on the screen.
+| Action | Desktop | Mobile / Touch |
+| :--- | :--- | :--- |
+| **Select Bird** | Click card or `◀` `▶` arrows | Tap card or `◀` `▶` arrows |
+| **Aim Slingshot** | Click & drag bird backward | Touch & drag bird backward |
+| **Launch Bird** | Release mouse button | Release finger |
+| **Flap Wings** | Tap screen / `Spacebar` / `Up Arrow` | Tap anywhere on screen |
+| **Retry / Switch Birds** | Click buttons or press `Spacebar` | Tap on-screen buttons |
 
 ---
 
-## 🖥️ Running Locally (Immediate Play)
+## 🖥️ Running Locally
 
-A built-in Python web server is provided:
+Double-click `Play_Game.bat` or run:
 
 ```bash
 python serve.py
 ```
 
-Then open `http://localhost:8080` in your browser.
-
----
-
-## 📦 App Store Deployment
-
-See the comprehensive guide in [APP_STORE_GUIDE.md](file:///c:/Users/user/Desktop/aa/APP_STORE_GUIDE.md) for full instructions on building the iOS project in Xcode and submitting to App Store Connect.
+Then open `http://localhost:8080` in your web browser.

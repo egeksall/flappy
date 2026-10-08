@@ -1,7 +1,7 @@
 @echo off
-title Flappy Bird Ultra Launcher
+title Angry Flappy Launcher
 echo ==============================================
-echo   Starting Flappy Bird Ultra...
+echo   Starting Angry Flappy (Flappy + Angry Birds)...
 echo ==============================================
 cd /d "%~dp0"
 

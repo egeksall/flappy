@@ -43,6 +43,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 36px;
     position: relative;
     background: radial-gradient(ellipse at bottom, #1b2838 0%, #080d15 100%);
 }
@@ -93,19 +94,16 @@ html, body {
 
 #game-container canvas {
     display: block;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
     outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
 /* Desktop Side Guide / App Store Preview Panel (shown on wider screens) */
 #desktop-companion {
     display: none;
-    position: absolute;
-    right: 48px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: relative;
     width: 310px;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
