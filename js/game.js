@@ -1,19 +1,20 @@
 // ============================================================
 // FIRE DRAGON - 3RD PERSON 3-LANE FLIGHT & EVOLUTION ENGINE
 // 16:9 Landscape • Rear Camera • Forward Flight • 3 Fixed Lanes
+// High-Resolution 1600x900 Crisp Presentation
 // ============================================================
 
 const CONFIG = {
-    GAME_WIDTH: 800,
-    GAME_HEIGHT: 450,
+    GAME_WIDTH: 1600,
+    GAME_HEIGHT: 900,
 
     // Horizon & 3D Projection
-    HORIZON_Y: 155,
-    VANISHING_X: 400,
+    HORIZON_Y: 310,
+    VANISHING_X: 800,
 
-    // 3 Fixed Flight Lanes (Left, Middle, Right) at Dragon Depth (Y = 335)
-    DRAGON_Y: 335,
-    LANE_X: [220, 400, 580], // 0: Left, 1: Middle, 2: Right
+    // 3 Fixed Flight Lanes (Left, Middle, Right) at Dragon Depth (Y = 600)
+    DRAGON_Y: 600,
+    LANE_X: [490, 800, 1110], // 0: Left, 1: Middle, 2: Right
     LANE_NAMES: ['LEFT', 'MIDDLE', 'RIGHT'],
 
     // Forward Flight Speed (Pseudo-3D runway scroll)
@@ -26,7 +27,7 @@ const CONFIG = {
 };
 
 // ============================================================
-// 3 FIRE DRAGON REAR-VIEW EVOLUTION STAGES
+// 3 FIRE DRAGON EVOLUTION STAGES (Authentic Character Art)
 // ============================================================
 const DRAGON_STAGES = [
     {
@@ -38,10 +39,12 @@ const DRAGON_STAGES = [
         tag: 'Hatchling Form',
         sheetKey: 'dragon_rear_baby',
         sheetPath: 'assets/dragon_rear/dragon_rear_baby_sheet.png',
-        frameWidth: 116,
-        frameHeight: 96,
-        tailOffset: { x: 0, y: 38 },
-        flameParticleScale: 0.45,
+        sideKey: 'dragon_baby',
+        sidePath: 'assets/dragon/dragon_baby.png',
+        frameWidth: 257,
+        frameHeight: 219,
+        tailOffset: { x: 0, y: 78 },
+        flameParticleScale: 0.75,
         titleColor: '#fde047'
     },
     {
@@ -53,10 +56,12 @@ const DRAGON_STAGES = [
         tag: 'Adolescent Form',
         sheetKey: 'dragon_rear_teen',
         sheetPath: 'assets/dragon_rear/dragon_rear_teen_sheet.png',
-        frameWidth: 168,
-        frameHeight: 138,
-        tailOffset: { x: 0, y: 56 },
-        flameParticleScale: 0.7,
+        sideKey: 'dragon_teen',
+        sidePath: 'assets/dragon/dragon_teen.png',
+        frameWidth: 340,
+        frameHeight: 282,
+        tailOffset: { x: 0, y: 110 },
+        flameParticleScale: 1.1,
         titleColor: '#fb923c'
     },
     {
@@ -68,10 +73,12 @@ const DRAGON_STAGES = [
         tag: 'Apex Elder Form',
         sheetKey: 'dragon_rear_mature',
         sheetPath: 'assets/dragon_rear/dragon_rear_mature_sheet.png',
-        frameWidth: 236,
-        frameHeight: 192,
-        tailOffset: { x: 0, y: 80 },
-        flameParticleScale: 1.05,
+        sideKey: 'dragon_mature',
+        sidePath: 'assets/dragon/dragon_mature.png',
+        frameWidth: 486,
+        frameHeight: 351,
+        tailOffset: { x: 0, y: 145 },
+        flameParticleScale: 1.6,
         titleColor: '#f87171'
     }
 ];
@@ -88,23 +95,23 @@ class PreloadScene extends Phaser.Scene {
         const cx = CONFIG.GAME_WIDTH / 2;
         const cy = CONFIG.GAME_HEIGHT / 2;
 
-        this.add.text(cx, cy - 30, 'FIRE DRAGON', {
+        this.add.text(cx, cy - 60, 'FIRE DRAGON', {
             fontFamily: 'Impact, "Arial Black", sans-serif',
-            fontSize: '34px',
+            fontSize: '64px',
             color: '#f97316',
             stroke: '#180702',
-            strokeThickness: 6
+            strokeThickness: 10
         }).setOrigin(0.5);
 
         const progressBox = this.add.graphics();
         const progressBar = this.add.graphics();
-        progressBox.fillStyle(0x180b1e, 0.85);
-        progressBox.fillRoundedRect(cx - 130, cy + 20, 260, 16, 8);
+        progressBox.fillStyle(0x180b1e, 0.9);
+        progressBox.fillRoundedRect(cx - 260, cy + 40, 520, 28, 14);
 
         this.load.on('progress', (val) => {
             progressBar.clear();
             progressBar.fillStyle(0xf97316, 1);
-            progressBar.fillRoundedRect(cx - 128, cy + 22, 256 * val, 12, 6);
+            progressBar.fillRoundedRect(cx - 256, cy + 44, 512 * val, 20, 10);
         });
 
         // Load 3 Rear-View Dragon Spritesheets
@@ -113,6 +120,7 @@ class PreloadScene extends Phaser.Scene {
                 frameWidth: s.frameWidth,
                 frameHeight: s.frameHeight
             });
+            this.load.image(s.sideKey, s.sidePath);
         });
 
         // Load Landscape Background & Particles
@@ -169,13 +177,13 @@ class DragonFlightScene extends Phaser.Scene {
 
         // 4. Tail Flame Ember Particle Emitter
         this.tailEmitter = this.add.particles(CONFIG.LANE_X[this.currentLane], CONFIG.DRAGON_Y, 'ember', {
-            speed: { min: 40, max: 110 },
+            speed: { min: 80, max: 220 },
             angle: { min: 70, max: 110 }, // Streams downward/towards camera
-            scale: { start: 0.6, end: 0.05 },
-            alpha: { start: 0.9, end: 0 },
+            scale: { start: 1.0, end: 0.1 },
+            alpha: { start: 0.95, end: 0 },
             lifespan: 550,
             blendMode: 'ADD',
-            frequency: 45
+            frequency: 40
         });
         this.tailEmitter.setDepth(15);
 
@@ -189,7 +197,7 @@ class DragonFlightScene extends Phaser.Scene {
         // 6. Setup Keyboard Controls (Left/Right Arrows & A/D)
         this.setupKeyboardControls();
 
-        // 7. On-Screen Touch Buttons (Left & Right Arrows) & UI
+        // 7. On-Screen Touch Controls (Left & Right Arrow Buttons) & High-Res HUD
         this.createOnScreenControls();
         this.createHUD();
 
@@ -201,9 +209,8 @@ class DragonFlightScene extends Phaser.Scene {
     // PSEUDO-3D FORWARD RUNWAY / CANYON PERSPECTIVE
     // ------------------------------------------------------------
     initForwardRunway() {
-        // Perspective horizontal ties scrolling toward camera
         this.runwayTies = [];
-        const count = 16;
+        const count = 18;
         for (let i = 0; i < count; i++) {
             this.runwayTies.push((i / count));
         }
@@ -226,16 +233,16 @@ class DragonFlightScene extends Phaser.Scene {
         }
 
         // 1. Draw 3-Lane Perspective Guidelines
-        // 4 boundary lines: Left Outer, Left/Mid Divider, Mid/Right Divider, Right Outer
-        const bottomXs = [70, 290, 510, 730];
+        // 4 boundary lines at bottom of canvas: Left Outer, Left/Mid, Mid/Right, Right Outer
+        const bottomXs = [140, 580, 1020, 1460];
         
         // Magma canyon floor base
-        this.groundGraphics.fillStyle(0x180914, 0.9);
+        this.groundGraphics.fillStyle(0x180914, 0.92);
         this.groundGraphics.beginPath();
-        this.groundGraphics.moveTo(V_X - 60, H_Y);
-        this.groundGraphics.lineTo(V_X + 60, H_Y);
-        this.groundGraphics.lineTo(bottomXs[3] + 40, B_Y);
-        this.groundGraphics.lineTo(bottomXs[0] - 40, B_Y);
+        this.groundGraphics.moveTo(V_X - 120, H_Y);
+        this.groundGraphics.lineTo(V_X + 120, H_Y);
+        this.groundGraphics.lineTo(bottomXs[3] + 80, B_Y);
+        this.groundGraphics.lineTo(bottomXs[0] - 80, B_Y);
         this.groundGraphics.closePath();
         this.groundGraphics.fillPath();
 
@@ -243,10 +250,10 @@ class DragonFlightScene extends Phaser.Scene {
         const lIdx = this.currentLane;
         const laneLeftBX = bottomXs[lIdx];
         const laneRightBX = bottomXs[lIdx + 1];
-        const topLX = V_X - 35 + lIdx * 23;
-        const topRX = V_X - 35 + (lIdx + 1) * 23;
+        const topLX = V_X - 70 + lIdx * 46;
+        const topRX = V_X - 70 + (lIdx + 1) * 46;
 
-        this.groundGraphics.fillStyle(0xf97316, 0.12);
+        this.groundGraphics.fillStyle(0xf97316, 0.14);
         this.groundGraphics.beginPath();
         this.groundGraphics.moveTo(topLX, H_Y);
         this.groundGraphics.lineTo(topRX, H_Y);
@@ -258,34 +265,33 @@ class DragonFlightScene extends Phaser.Scene {
         // Draw Lane Divider Lines
         for (let j = 0; j < bottomXs.length; j++) {
             const bx = bottomXs[j];
-            const tx = V_X - 40 + j * 26;
+            const tx = V_X - 80 + j * 53;
             const isOuter = (j === 0 || j === bottomXs.length - 1);
 
-            this.groundGraphics.lineStyle(isOuter ? 3 : 2, isOuter ? 0xf97316 : 0xfb923c, isOuter ? 0.8 : 0.4);
+            this.groundGraphics.lineStyle(isOuter ? 6 : 4, isOuter ? 0xf97316 : 0xfb923c, isOuter ? 0.85 : 0.45);
             this.groundGraphics.lineBetween(tx, H_Y, bx, B_Y);
         }
 
         // 2. Draw Moving Horizontal Magma Ridge Ties
-        // In 3D: z from 1 (horizon) to 0 (camera). y = H_Y + (B_Y - H_Y) * (t^2.4)
         for (let t of this.runwayTies) {
             const progress = Math.pow(t, 2.3);
             const curY = H_Y + (B_Y - H_Y) * progress;
-            const curWidth = 80 + (740 - 80) * progress;
+            const curWidth = 160 + (1480 - 160) * progress;
             const curLeft = V_X - curWidth / 2;
             const curRight = V_X + curWidth / 2;
 
-            const alpha = Math.min(1.0, progress * 1.5) * 0.7;
-            const thickness = Math.max(1, Math.floor(progress * 5));
+            const alpha = Math.min(1.0, progress * 1.5) * 0.75;
+            const thickness = Math.max(2, Math.floor(progress * 10));
 
             this.groundGraphics.lineStyle(thickness, 0xf97316, alpha);
             this.groundGraphics.lineBetween(curLeft, curY, curRight, curY);
 
-            // Glowing magma dots on dividers
+            // Glowing magma dots on lane dividers
             const dotStep = curWidth / 3;
             for (let d = 1; d <= 2; d++) {
                 const dotX = curLeft + d * dotStep;
                 this.groundGraphics.fillStyle(0xffedd5, alpha);
-                this.groundGraphics.fillCircle(dotX, curY, Math.max(1.5, progress * 4.5));
+                this.groundGraphics.fillCircle(dotX, curY, Math.max(3, progress * 8));
             }
         }
     }
@@ -295,15 +301,15 @@ class DragonFlightScene extends Phaser.Scene {
     // ------------------------------------------------------------
     createSpeedParticles() {
         this.speedParticles = this.add.particles(0, 0, 'ember', {
-            x: { min: 250, max: 550 },
-            y: { min: CONFIG.HORIZON_Y + 10, max: CONFIG.HORIZON_Y + 40 },
-            speedX: { min: -180, max: 180 },
-            speedY: { min: 140, max: 320 },
-            scale: { start: 0.15, end: 0.8 },
-            alpha: { start: 0.8, end: 0 },
+            x: { min: 500, max: 1100 },
+            y: { min: CONFIG.HORIZON_Y + 20, max: CONFIG.HORIZON_Y + 80 },
+            speedX: { min: -360, max: 360 },
+            speedY: { min: 280, max: 640 },
+            scale: { start: 0.25, end: 1.4 },
+            alpha: { start: 0.85, end: 0 },
             lifespan: 1100,
             blendMode: 'ADD',
-            frequency: 90
+            frequency: 70
         });
         this.speedParticles.setDepth(10);
     }
@@ -317,10 +323,9 @@ class DragonFlightScene extends Phaser.Scene {
 
         // 1. Boundary Check: Cannot move beyond Left (0) or Right (2)
         if (targetLane < 0 || targetLane > 2) {
-            // Reached outer boundary: subtle shudder feedback
             this.tweens.add({
                 targets: this.dragon,
-                x: this.dragon.x + direction * 10,
+                x: this.dragon.x + direction * 18,
                 duration: 60,
                 yoyo: true,
                 ease: 'Quad.easeInOut'
@@ -341,7 +346,6 @@ class DragonFlightScene extends Phaser.Scene {
         this.isLaneTransitioning = true;
         const bankRoll = direction * CONFIG.BANK_ANGLE;
 
-        // Kill active position tweens
         this.tweens.killTweensOf(this.dragon);
 
         // Move to target lane X
@@ -377,7 +381,7 @@ class DragonFlightScene extends Phaser.Scene {
         this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-        // Single press event listeners to prevent accidental multi-lane skipping
+        // Single press event listeners
         this.input.keyboard.on('keydown-LEFT', () => this.shiftLane(-1));
         this.input.keyboard.on('keydown-A', () => this.shiftLane(-1));
 
@@ -386,35 +390,35 @@ class DragonFlightScene extends Phaser.Scene {
     }
 
     // ------------------------------------------------------------
-    // ON-SCREEN TOUCH CONTROLS (LEFT & RIGHT ARROW BUTTONS)
+    // HIGH-RESOLUTION ON-SCREEN TOUCH CONTROLS
     // ------------------------------------------------------------
     createOnScreenControls() {
-        const btnY = CONFIG.GAME_HEIGHT - 65;
-        const btnW = 105;
-        const btnH = 62;
+        const btnY = CONFIG.GAME_HEIGHT - 120;
+        const btnW = 210;
+        const btnH = 115;
 
         // Left Arrow Button (Bottom-Left)
-        this.btnLeft = this.createDirectionButton(80, btnY, '◀ LEFT', -1, btnW, btnH);
+        this.btnLeft = this.createDirectionButton(160, btnY, '◀ LEFT', -1, btnW, btnH);
 
         // Right Arrow Button (Bottom-Right)
-        this.btnRight = this.createDirectionButton(CONFIG.GAME_WIDTH - 80, btnY, 'RIGHT ▶', +1, btnW, btnH);
+        this.btnRight = this.createDirectionButton(CONFIG.GAME_WIDTH - 160, btnY, 'RIGHT ▶', +1, btnW, btnH);
     }
 
     createDirectionButton(x, y, labelText, direction, w, h) {
         const container = this.add.container(x, y).setDepth(35);
 
         const bg = this.add.graphics();
-        bg.fillStyle(0x0e0816, 0.82);
-        bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
-        bg.lineStyle(2, 0xf97316, 0.65);
-        bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
+        bg.fillStyle(0x0e0816, 0.88);
+        bg.fillRoundedRect(-w / 2, -h / 2, w, h, 24);
+        bg.lineStyle(3.5, 0xf97316, 0.8);
+        bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 24);
         container.add(bg);
 
         const text = this.add.text(0, 0, labelText, {
             fontFamily: 'Impact, "Arial Black", sans-serif',
-            fontSize: '18px',
+            fontSize: '32px',
             color: '#ffffff',
-            letterSpacing: 1
+            letterSpacing: 2
         }).setOrigin(0.5, 0.5);
         container.add(text);
 
@@ -422,24 +426,22 @@ class DragonFlightScene extends Phaser.Scene {
         container.setInteractive({ useHandCursor: true });
 
         container.on('pointerdown', () => {
-            // Tap feedback
             bg.clear();
             bg.fillStyle(0xf97316, 0.95);
-            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
-            bg.lineStyle(2, 0xffedd5, 1);
-            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 24);
+            bg.lineStyle(3.5, 0xffedd5, 1);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 24);
             text.setColor('#180702');
 
-            // Trigger same underlying shiftLane
             this.shiftLane(direction);
         });
 
         const resetBtn = () => {
             bg.clear();
-            bg.fillStyle(0x0e0816, 0.82);
-            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 14);
-            bg.lineStyle(2, 0xf97316, 0.65);
-            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 14);
+            bg.fillStyle(0x0e0816, 0.88);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 24);
+            bg.lineStyle(3.5, 0xf97316, 0.8);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 24);
             text.setColor('#ffffff');
         };
 
@@ -450,7 +452,7 @@ class DragonFlightScene extends Phaser.Scene {
     }
 
     // ------------------------------------------------------------
-    // EVOLUTION STAGE SWITCHER & HUD
+    // EVOLUTION STAGE SWITCHER & HIGH-RES HUD
     // ------------------------------------------------------------
     setDragonStage(stageIndex) {
         if (stageIndex < 0 || stageIndex >= DRAGON_STAGES.length) return;
@@ -466,8 +468,8 @@ class DragonFlightScene extends Phaser.Scene {
         this.dragon.setTexture(stage.sheetKey);
         this.dragon.play(`${stage.sheetKey}_fly`);
 
-        // Scale punch tween
-        this.dragon.setScale(0.4);
+        // Scale punch animation
+        this.dragon.setScale(0.5);
         this.tweens.add({
             targets: this.dragon,
             scaleX: 1.0,
@@ -477,7 +479,7 @@ class DragonFlightScene extends Phaser.Scene {
         });
 
         // Tail particle adjustment
-        this.tailEmitter.setScale({ start: stage.flameParticleScale, end: 0.05 });
+        this.tailEmitter.setScale({ start: stage.flameParticleScale, end: 0.1 });
 
         this.updateStageUI();
         this.showEvolutionToast(stage);
@@ -486,39 +488,39 @@ class DragonFlightScene extends Phaser.Scene {
     createHUD() {
         // Top Header Bar
         const topBg = this.add.graphics();
-        topBg.fillStyle(0x0a0812, 0.82);
-        topBg.fillRoundedRect(160, 10, 480, 48, 14);
-        topBg.lineStyle(1.5, 0xf97316, 0.5);
-        topBg.strokeRoundedRect(160, 10, 480, 48, 14);
+        topBg.fillStyle(0x0a0812, 0.88);
+        topBg.fillRoundedRect(320, 20, 960, 92, 24);
+        topBg.lineStyle(2.5, 0xf97316, 0.6);
+        topBg.strokeRoundedRect(320, 20, 960, 92, 24);
         topBg.setDepth(30);
 
         // Title / Lane status
-        this.titleText = this.add.text(400, 24, '🔥 FIRE DRAGON • MIDDLE LANE', {
+        this.titleText = this.add.text(800, 48, '🔥 FIRE DRAGON • MIDDLE LANE', {
             fontFamily: 'Impact, "Arial Black", sans-serif',
-            fontSize: '17px',
+            fontSize: '32px',
             color: '#f97316',
-            letterSpacing: 1
+            letterSpacing: 2
         }).setOrigin(0.5, 0.5).setDepth(31);
 
-        this.subtitleText = this.add.text(400, 44, 'Press ◀ Left / Right ▶ Arrows or Touch Buttons to Change Lanes', {
+        this.subtitleText = this.add.text(800, 84, 'Press ◀ Left / Right ▶ Arrows or Touch Buttons to Change Lanes', {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: '11px',
+            fontSize: '18px',
             color: '#fdba74'
         }).setOrigin(0.5, 0.5).setDepth(31);
 
-        // Top-Right Evolution Stage Selector Buttons
+        // Bottom Evolution Stage Selector Buttons
         this.createStageSelectorButtons();
     }
 
     createStageSelectorButtons() {
-        const btnW = 86;
-        const btnH = 34;
-        const startX = 270;
-        const btnY = CONFIG.GAME_HEIGHT - 30;
+        const btnW = 180;
+        const btnH = 68;
+        const startX = 520;
+        const btnY = CONFIG.GAME_HEIGHT - 65;
 
         this.stageButtons = [];
         DRAGON_STAGES.forEach((stage, idx) => {
-            const bx = startX + idx * (btnW + 10);
+            const bx = startX + idx * (btnW + 24);
             const container = this.add.container(bx, btnY).setDepth(35);
 
             const bg = this.add.graphics();
@@ -526,8 +528,9 @@ class DragonFlightScene extends Phaser.Scene {
 
             const label = this.add.text(0, 0, `${stage.icon} ${stage.shortName}`, {
                 fontFamily: 'Impact, "Arial Black", sans-serif',
-                fontSize: '13px',
-                color: '#ffffff'
+                fontSize: '24px',
+                color: '#ffffff',
+                letterSpacing: 1
             }).setOrigin(0.5, 0.5);
             container.add(label);
 
@@ -553,15 +556,15 @@ class DragonFlightScene extends Phaser.Scene {
             b.bg.clear();
             if (isSelected) {
                 b.bg.fillStyle(0xf97316, 1);
-                b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
-                b.bg.lineStyle(2, 0xffedd5, 0.9);
-                b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+                b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
+                b.bg.lineStyle(3, 0xffedd5, 0.95);
+                b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
                 b.label.setColor('#ffffff');
             } else {
-                b.bg.fillStyle(0x180b1e, 0.85);
-                b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
-                b.bg.lineStyle(1, 0xf97316, 0.3);
-                b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 10);
+                b.bg.fillStyle(0x180b1e, 0.88);
+                b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
+                b.bg.lineStyle(2, 0xf97316, 0.4);
+                b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
                 b.label.setColor('#cbd5e1');
             }
         });
@@ -579,17 +582,17 @@ class DragonFlightScene extends Phaser.Scene {
     showEvolutionToast(stage) {
         if (this.toastContainer) this.toastContainer.destroy();
 
-        this.toastContainer = this.add.container(400, 85).setDepth(40);
+        this.toastContainer = this.add.container(800, 155).setDepth(40);
         const toastBg = this.add.graphics();
-        toastBg.fillStyle(0x180b1e, 0.92);
-        toastBg.fillRoundedRect(-140, -18, 280, 36, 18);
-        toastBg.lineStyle(1.5, 0xf97316, 0.85);
-        toastBg.strokeRoundedRect(-140, -18, 280, 36, 18);
+        toastBg.fillStyle(0x180b1e, 0.94);
+        toastBg.fillRoundedRect(-260, -32, 520, 64, 32);
+        toastBg.lineStyle(2.5, 0xf97316, 0.9);
+        toastBg.strokeRoundedRect(-260, -32, 520, 64, 32);
         this.toastContainer.add(toastBg);
 
         const toastText = this.add.text(0, 0, `✨ Stage ${stage.stage}: ${stage.name}`, {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: '12px',
+            fontSize: '22px',
             fontWeight: 'bold',
             color: '#fef08a'
         }).setOrigin(0.5, 0.5);
@@ -599,10 +602,10 @@ class DragonFlightScene extends Phaser.Scene {
         this.tweens.add({
             targets: this.toastContainer,
             alpha: 1,
-            y: 80,
+            y: 150,
             duration: 250,
             yoyo: true,
-            hold: 1600,
+            hold: 1800,
             onComplete: () => {
                 if (this.toastContainer) this.toastContainer.destroy();
             }
@@ -620,7 +623,7 @@ class DragonFlightScene extends Phaser.Scene {
         this.updateForwardRunway(delta);
 
         // 2. Flight bobbing (Subtle vertical hover oscillation)
-        const hoverOffsetY = Math.sin(this.hoverTime * 0.004) * 4.5;
+        const hoverOffsetY = Math.sin(this.hoverTime * 0.004) * 8.0;
         this.dragon.y = CONFIG.DRAGON_Y + hoverOffsetY;
 
         // 3. Update Tail Ember Emitter Position to follow dragon
@@ -631,7 +634,7 @@ class DragonFlightScene extends Phaser.Scene {
 }
 
 // ============================================================
-// PHASER GAME CONFIGURATION (16:9 LANDSCAPE)
+// PHASER GAME CONFIGURATION (16:9 LANDSCAPE HIGH-RES)
 // ============================================================
 const gameConfig = {
     type: Phaser.AUTO,
