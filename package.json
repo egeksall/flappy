@@ -1,10 +1,10 @@
 {
-  "name": "flappy-bird-ultra",
+  "name": "fire-dragon",
   "version": "1.0.0",
-  "description": "High-performance Flappy Bird clone built with Phaser 3 and ready for Apple App Store / Google Play via Capacitor.",
+  "description": "2D free-flight Fire Dragon game with evolutionary stages.",
   "main": "index.html",
   "scripts": {
-    "start": "python -m http.server 8080",
+    "start": "python serve.py",
     "cap:add:ios": "npx @capacitor/cli add ios",
     "cap:sync": "npx @capacitor/cli sync",
     "cap:open:ios": "npx @capacitor/cli open ios",
@@ -13,11 +13,10 @@
   },
   "keywords": [
     "phaser3",
-    "flappy-bird",
+    "fire-dragon",
+    "dragon-game",
     "ios-game",
-    "app-store",
-    "capacitor",
-    "game-dev"
+    "capacitor"
   ],
   "author": "Antigravity Developer",
   "license": "MIT",

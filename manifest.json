@@ -1,12 +1,12 @@
 {
-  "name": "Flappy Bird Ultra",
-  "short_name": "FlappyBird",
-  "description": "Premium arcade Flappy Bird clone with custom skins, medals, and high-performance physics.",
+  "name": "Fire Dragon",
+  "short_name": "FireDragon",
+  "description": "Free-flight 2D Fire Dragon adventure with evolutionary stages.",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "portrait",
-  "background_color": "#0a0e17",
-  "theme_color": "#38bdf8",
+  "background_color": "#0a0a14",
+  "theme_color": "#f97316",
   "icons": [
     {
       "src": "assets/icon.png",

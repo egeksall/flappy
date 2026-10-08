@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- iOS / App Store Webview Optimizations -->
+    <!-- Mobile Webview Optimizations -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Angry Flappy">
+    <meta name="apple-mobile-web-app-title" content="Fire Dragon">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0a0e17">
+    <meta name="theme-color" content="#0a0a14">
     
-    <title>Angry Flappy - Flappy Bird + Angry Birds Hybrid</title>
+    <title>Fire Dragon - Free Flight & Evolution</title>
     
     <!-- Icons -->
-    <link rel="icon" type="image/png" href="assets/icon.png">
-    <link rel="apple-touch-icon" href="assets/icon.png">
+    <link rel="icon" type="image/png" href="assets/dragon/dragon_baby_game.png">
+    <link rel="apple-touch-icon" href="assets/dragon/dragon_baby_game.png">
     <link rel="manifest" href="manifest.json">
 
     <!-- Styles -->
@@ -28,7 +28,7 @@
     <div id="app-layout">
         <div class="ambient-glow"></div>
 
-        <!-- Mobile / App Frame Wrapper -->
+        <!-- Portrait Game Canvas Frame -->
         <main id="game-wrapper">
             <div id="game-container"></div>
         </main>
@@ -36,41 +36,40 @@
         <!-- Desktop Showcase & Controls Guide Panel -->
         <aside id="desktop-companion">
             <header class="companion-header">
-                <img src="assets/icon.png" alt="Angry Flappy App Icon">
+                <img src="assets/dragon/dragon_baby_game.png" alt="Baby Fire Dragon">
                 <div>
-                    <h3>Angry Flappy</h3>
-                    <p>Flappy Bird + Angry Birds</p>
+                    <h3>Fire Dragon</h3>
+                    <p>Free Flight & Evolution</p>
                 </div>
             </header>
             
             <div class="companion-badge">
-                <span class="dot">●</span> Hybrid Mechanics v1.0
+                <span class="dot">●</span> 2D Free Flight Dragon
             </div>
 
             <div class="companion-section">
-                <h4>Core Flow</h4>
+                <h4>Controls</h4>
                 <ul class="feature-list">
-                    <li><span class="icon">🏠</span> 1. Select Bird in Menu</li>
-                    <li><span class="icon">🎯</span> 2. Pull Slingshot to Aim</li>
-                    <li><span class="icon">🚀</span> 3. Release to Catapult</li>
-                    <li><span class="icon">💨</span> 4. Slingshot Disappears</li>
-                    <li><span class="icon">👆</span> 5. Tap / Spacebar to Flap</li>
+                    <li><span class="icon">👆</span> Click / Touch & hold dragon</li>
+                    <li><span class="icon">↔️</span> Drag freely anywhere on screen</li>
+                    <li><span class="icon">🪶</span> Release to hover in place</li>
+                    <li><span class="icon">🚫</span> No gravity, no flapping</li>
                 </ul>
             </div>
 
             <div class="companion-section">
-                <h4>Playable Birds</h4>
+                <h4>Evolution Stages</h4>
                 <ul class="feature-list">
-                    <li><span class="icon">🔵</span> Blue Bird</li>
-                    <li><span class="icon">🟡</span> Yellow Bird</li>
-                    <li><span class="icon">⚫</span> Black Bird</li>
+                    <li><span class="icon">🐣</span> 1. Baby Fire Dragon</li>
+                    <li><span class="icon">⚡</span> 2. Teen Fire Dragon</li>
+                    <li><span class="icon">👑</span> 3. Mature Fire Dragon</li>
                 </ul>
             </div>
         </aside>
     </div>
 
     <!-- Scripts -->
-    <script src="js/audio.js?v=1.1"></script>
-    <script src="js/game.js?v=1.1"></script>
+    <script src="js/audio.js?v=2.0"></script>
+    <script src="js/game.js?v=2.0"></script>
 </body>
 </html>

@@ -1,42 +1,26 @@
-# 🏹 Angry Flappy (Flappy Bird + Angry Birds Hybrid)
+# 🔥 Fire Dragon (Free Flight & Evolution)
 
-> A polished hybrid arcade game combining the iconic mechanics of **Angry Birds** (slingshot aiming & launch, material destruction) and **Flappy Bird** (tap-to-flap flying & gravity). Built on **Phaser 3** and optimized for both desktop and mobile web.
+> A 2D free-flight game where you control a Fire Dragon surviving against human hunters, evolving through collecting food. Built with **Phaser 3** and optimized for both desktop and mobile web.
 
 ---
 
-## 🎮 Core Gameplay Flow (v1.1)
+## 🎮 Core Game Features
 
-1. **Main Menu Bird Selection (Fixed & Enhanced)**:
-   - 🔵 **Blue Bird**: Specializes in destroying **Glass 🪟**.
-   - 🟡 **Yellow Bird**: Specializes in destroying **Wood 🪵**.
-   - ⚫ **Black Bird**: Specializes in destroying **Stone 🪨**.
-   - **Bulletproof Selection**: Tap/click anywhere on the bird cards or use the `◀` and `▶` arrows. The selected bird receives a vibrant active highlight, glowing pedestal, and `"✔ SELECTED"` badge. Whichever bird you choose is passed directly into the slingshot!
+### 1. Free Flight Controls
+- **Zero Gravity & Zero Flapping**: The dragon is an airborne creature that hovers naturally in place without falling.
+- **Mouse & Touch Drag**:
+  - **Desktop**: Click and hold the dragon, drag anywhere on the screen, release to hover.
+  - **Mobile**: Touch and hold the dragon, drag your finger across the sky, release to hover.
+- **Natural Banking**: The dragon organically tilts up and down to match movement direction.
+- **Flame Embers**: Continuous fire sparks and glowing embers trail behind the dragon's tail.
 
-2. **Angry Birds Slingshot Launch**:
-   - The selected bird begins loaded inside a wooden slingshot anchored on the ground.
-   - **Click / Touch & Drag** the bird backward in any direction or angle.
-   - Dynamic latex rubber bands stretch in real time between the slingshot prongs and leather pouch.
-   - Ballistic trajectory dots preview the projected launch arc.
-   - **Release** to launch the bird into flight!
-   - **Slingshot Disappears**: Upon launch, the slingshot smoothly vanishes and is removed from the flight.
-
-3. **Flappy Bird Flying & Gravity**:
-   - **Tap / Click / Spacebar** to flap wings and gain upward altitude.
-   - **Continuous Gravity** pulls the bird down when not flapping.
-   - Smooth diving and rising rotation physics matching vertical velocity.
-
-4. **Solid Vertical Obstacles (No Gaps / Openings)**:
-   - As the bird flies, it encounters solid vertical structures spanning from ceiling to ground.
-   - Three distinct materials with custom textures:
-     - 🪟 **Glass**: Translucent crystal pane with cyan gleam.
-     - 🪵 **Wood**: Reinforced planks with steel brackets & rivets.
-     - 🪨 **Stone**: Heavy chiseled granite masonry bricks.
-
-5. **Bird vs. Material Destruction Rules**:
-   - 🔵 **Blue Bird + 🪟 Glass** → ✅ **Glass Shatters!** Explosive glass shards, crystal audio fx, and bird soars right through!
-   - 🟡 **Yellow Bird + 🪵 Wood** → ✅ **Wood Splinters!** Flying wood splinters, crunchy cracking audio, and bird continues flying!
-   - ⚫ **Black Bird + 🪨 Stone** → ✅ **Stone Smashed!** Flying rock rubble chunks, deep stone smash rumble, and bird breaks through!
-   - ❌ **Incompatible Hits** (e.g. Blue Bird hitting Wood or Stone) → Solid barrier crash! Feathers explode, impact sound plays, and a crash modal explains which bird can break that material.
+### 2. Three Evolutionary Stages
+- 🐣 **Stage 1: Baby Fire Dragon** (Starting form)
+  - Small rounded body, small wings, curious sapphire blue eyes, tiny flame tail.
+- ⚡ **Stage 2: Teen Fire Dragon**
+  - Visibly larger body and wings, longer neck, sharper developed horns, vibrant crest.
+- 👑 **Stage 3: Mature Fire Dragon**
+  - Massive dragon titan with sweeping horns, giant majestic wings, muscular stance, and roaring inferno tail.
 
 ---
 
@@ -44,20 +28,15 @@
 
 | Action | Desktop | Mobile / Touch |
 | :--- | :--- | :--- |
-| **Select Bird** | Click card or `◀` `▶` arrows | Tap card or `◀` `▶` arrows |
-| **Aim Slingshot** | Click & drag bird backward | Touch & drag bird backward |
-| **Launch Bird** | Release mouse button | Release finger |
-| **Flap Wings** | Tap screen / `Spacebar` / `Up Arrow` | Tap anywhere on screen |
-| **Retry / Switch Birds** | Click buttons or press `Spacebar` | Tap on-screen buttons |
+| **Move Dragon** | Click & drag dragon | Touch & drag dragon |
+| **Hover in Place** | Release mouse button | Release finger |
+| **Evolve / Switch Stage** | Click `Baby` / `Teen` / `Mature` buttons | Tap `Baby` / `Teen` / `Mature` buttons |
 
 ---
 
-## 🖥️ Running Locally
-
+## 🚀 Running the Game
 Double-click `Play_Game.bat` or run:
-
 ```bash
 python serve.py
 ```
-
-Then open `http://localhost:8080` in your web browser.
+Then navigate to `http://localhost:8080` on PC or `http://<your-local-ip>:8080` on your phone.

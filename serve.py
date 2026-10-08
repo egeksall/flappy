@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     with ThreadingHTTPServer(("", PORT), Handler) as httpd:
         print(f"==================================================")
-        print(f"  Angry Flappy Game Server Running:")
+        print(f"  Fire Dragon Game Server Running:")
         print(f"  - On PC:    http://localhost:{PORT}")
         print(f"  - On Phone: http://{local_ip}:{PORT}")
         print(f"==================================================")

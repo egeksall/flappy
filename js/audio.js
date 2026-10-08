@@ -473,6 +473,76 @@ class SoundManager {
             try { navigator.vibrate([30, 20, 40, 20, 60]); } catch (e) {}
         }
     }
+
+    // Dragon Grab sound: warm gentle air whoosh
+    playDragonGrab() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(320, now + 0.1);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+    }
+
+    // Dragon Evolve sound: majestic ascending triad with flame roar burst
+    playDragonEvolve() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const chord = [220, 277.18, 329.63, 440, 554.37, 659.25]; // A major triumphant chord
+        chord.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const t0 = now + idx * 0.05;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t0);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.04, t0 + 0.3);
+
+            gain.gain.setValueAtTime(0.2, t0);
+            gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t0);
+            osc.stop(t0 + 0.36);
+        });
+
+        // Roaring flame resonance
+        const roar = this.ctx.createOscillator();
+        const roarGain = this.ctx.createGain();
+        roar.type = 'sawtooth';
+        roar.frequency.setValueAtTime(90, now + 0.1);
+        roar.frequency.linearRampToValueAtTime(140, now + 0.35);
+        roar.frequency.exponentialRampToValueAtTime(50, now + 0.6);
+
+        roarGain.gain.setValueAtTime(0.15, now + 0.1);
+        roarGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+        roar.connect(roarGain);
+        roarGain.connect(this.ctx.destination);
+        roar.start(now + 0.1);
+        roar.stop(now + 0.66);
+
+        if (navigator.vibrate) {
+            try { navigator.vibrate([40, 30, 80]); } catch (e) {}
+        }
+    }
 }
 
 window.soundManager = new SoundManager();

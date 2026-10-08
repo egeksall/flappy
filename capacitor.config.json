@@ -1,18 +1,18 @@
 {
-  "appId": "com.flappybird.ultra",
-  "appName": "Flappy Bird Ultra",
+  "appId": "com.firedragon.game",
+  "appName": "Fire Dragon",
   "webDir": ".",
   "bundledWebRuntime": false,
   "ios": {
     "scrollEnabled": false,
     "allowsLinkPreview": false,
     "contentInset": "always",
-    "backgroundColor": "#0a0e17"
+    "backgroundColor": "#0a0a14"
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1500,
-      "backgroundColor": "#0a0e17",
+      "backgroundColor": "#0a0a14",
       "showSpinner": false
     },
     "StatusBar": {
