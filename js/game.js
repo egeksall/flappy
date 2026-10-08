@@ -1,7 +1,7 @@
 // ============================================================
 // FIRE DRAGON - 3RD PERSON 3-LANE FLIGHT & EVOLUTION ENGINE
 // 16:9 Landscape • Rear Camera • Forward Flight • 3 Fixed Lanes
-// High-Resolution 1600x900 Crisp Presentation
+// High-Resolution 1600x900 Canvas • Fireball Attacks
 // ============================================================
 
 const CONFIG = {
@@ -12,9 +12,9 @@ const CONFIG = {
     HORIZON_Y: 310,
     VANISHING_X: 800,
 
-    // 3 Fixed Flight Lanes (Left, Middle, Right) at Dragon Depth (Y = 600)
-    DRAGON_Y: 600,
-    LANE_X: [490, 800, 1110], // 0: Left, 1: Middle, 2: Right
+    // 3 Fixed Flight Lanes (Left, Middle, Right) at Dragon Depth (Y = 560)
+    DRAGON_Y: 560,
+    LANE_X: [515, 800, 1085], // 0: Left, 1: Middle, 2: Right
     LANE_NAMES: ['LEFT', 'MIDDLE', 'RIGHT'],
 
     // Forward Flight Speed (Pseudo-3D runway scroll)
@@ -23,7 +23,10 @@ const CONFIG = {
     BANK_ANGLE: 0.18, // radians roll tilt on lane shift
 
     // Wing flap animation frame rate
-    FLAP_FPS: 7
+    FLAP_FPS: 7,
+
+    // Attack Fireball Settings
+    ATTACK_COOLDOWN: 240 // ms between fireball blasts
 };
 
 // ============================================================
@@ -41,6 +44,9 @@ const DRAGON_STAGES = [
         sheetPath: 'assets/dragon_rear/dragon_rear_baby_sheet.png',
         sideKey: 'dragon_baby',
         sidePath: 'assets/dragon/dragon_baby.png',
+        fireballKey: 'fireball_baby',
+        fireballScale: 0.95,
+        fireballSpeed: 520,
         frameWidth: 257,
         frameHeight: 219,
         tailOffset: { x: 0, y: 78 },
@@ -58,6 +64,9 @@ const DRAGON_STAGES = [
         sheetPath: 'assets/dragon_rear/dragon_rear_teen_sheet.png',
         sideKey: 'dragon_teen',
         sidePath: 'assets/dragon/dragon_teen.png',
+        fireballKey: 'fireball_teen',
+        fireballScale: 1.15,
+        fireballSpeed: 490,
         frameWidth: 340,
         frameHeight: 282,
         tailOffset: { x: 0, y: 110 },
@@ -75,6 +84,9 @@ const DRAGON_STAGES = [
         sheetPath: 'assets/dragon_rear/dragon_rear_mature_sheet.png',
         sideKey: 'dragon_mature',
         sidePath: 'assets/dragon/dragon_mature.png',
+        fireballKey: 'fireball_mature',
+        fireballScale: 1.45,
+        fireballSpeed: 460,
         frameWidth: 486,
         frameHeight: 351,
         tailOffset: { x: 0, y: 145 },
@@ -114,7 +126,7 @@ class PreloadScene extends Phaser.Scene {
             progressBar.fillRoundedRect(cx - 256, cy + 44, 512 * val, 20, 10);
         });
 
-        // Load 3 Rear-View Dragon Spritesheets
+        // Load 3 Rear-View Dragon Spritesheets & Side Icons
         DRAGON_STAGES.forEach(s => {
             this.load.spritesheet(s.sheetKey, s.sheetPath, {
                 frameWidth: s.frameWidth,
@@ -122,6 +134,11 @@ class PreloadScene extends Phaser.Scene {
             });
             this.load.image(s.sideKey, s.sidePath);
         });
+
+        // Load 3 Fireball Attack Sprites
+        this.load.image('fireball_baby', 'assets/fireballs/fireball_baby.png');
+        this.load.image('fireball_teen', 'assets/fireballs/fireball_teen.png');
+        this.load.image('fireball_mature', 'assets/fireballs/fireball_mature.png');
 
         // Load Landscape Background & Particles
         this.load.image('landscape_bg', 'assets/dragon_rear/landscape_bg.png');
@@ -158,6 +175,8 @@ class DragonFlightScene extends Phaser.Scene {
         this.isLaneTransitioning = false;
         this.flightDistance = 0;
         this.hoverTime = 0;
+        this.lastAttackTime = 0;
+        this.activeFireballs = [];
 
         // Sound manager
         if (window.soundManager) {
@@ -194,12 +213,10 @@ class DragonFlightScene extends Phaser.Scene {
         this.dragon.setDepth(20);
         this.dragon.play(`${initialStage.sheetKey}_fly`);
 
-        // 6. Setup Keyboard Controls (Left/Right Arrows & A/D)
+        // 6. Setup Controls (Keyboard + Touch UI)
         this.setupKeyboardControls();
-
-        // 7. On-Screen Touch Controls (Left & Right Arrow Buttons) & High-Res HUD
-        this.createOnScreenControls();
-        this.createHUD();
+        this.createTopEvolutionBar();
+        this.createBottomControls();
 
         // Welcome Toast
         this.showEvolutionToast(initialStage);
@@ -233,7 +250,6 @@ class DragonFlightScene extends Phaser.Scene {
         }
 
         // 1. Draw 3-Lane Perspective Guidelines
-        // 4 boundary lines at bottom of canvas: Left Outer, Left/Mid, Mid/Right, Right Outer
         const bottomXs = [140, 580, 1020, 1460];
         
         // Magma canyon floor base
@@ -321,7 +337,7 @@ class DragonFlightScene extends Phaser.Scene {
         // direction: -1 (LEFT) or +1 (RIGHT)
         const targetLane = this.currentLane + direction;
 
-        // 1. Boundary Check: Cannot move beyond Left (0) or Right (2)
+        // 1. Boundary Check
         if (targetLane < 0 || targetLane > 2) {
             this.tweens.add({
                 targets: this.dragon,
@@ -333,7 +349,7 @@ class DragonFlightScene extends Phaser.Scene {
             return false;
         }
 
-        // 2. Strict Single-Lane Step (cannot skip lanes)
+        // 2. Strict Single-Lane Step
         this.currentLane = targetLane;
         const targetX = CONFIG.LANE_X[this.currentLane];
 
@@ -348,7 +364,6 @@ class DragonFlightScene extends Phaser.Scene {
 
         this.tweens.killTweensOf(this.dragon);
 
-        // Move to target lane X
         this.tweens.add({
             targets: this.dragon,
             x: targetX,
@@ -359,7 +374,6 @@ class DragonFlightScene extends Phaser.Scene {
             }
         });
 
-        // Roll into banking tilt, then level out
         this.dragon.setRotation(bankRoll);
         this.tweens.add({
             targets: this.dragon,
@@ -368,40 +382,203 @@ class DragonFlightScene extends Phaser.Scene {
             ease: 'Sine.easeOut'
         });
 
-        // Update HUD
-        this.updateLaneHUD();
         return true;
     }
 
     // ------------------------------------------------------------
-    // KEYBOARD CONTROLS (LEFT / RIGHT ARROWS + A / D)
+    // FIREBALL ATTACK MECHANICS (BABY / TEEN / MATURE)
+    // ------------------------------------------------------------
+    attack() {
+        const now = this.time.now;
+        if (now - this.lastAttackTime < CONFIG.ATTACK_COOLDOWN) return;
+        this.lastAttackTime = now;
+
+        const stage = DRAGON_STAGES[this.currentStageIndex];
+
+        // 1. Sound & Dragon Recoil animation
+        if (window.soundManager && window.soundManager.playFireball) {
+            window.soundManager.playFireball(this.currentStageIndex);
+        }
+
+        // Quick cast punch
+        this.tweens.add({
+            targets: this.dragon,
+            y: this.dragon.y - 14,
+            scaleY: 1.06,
+            duration: 80,
+            yoyo: true,
+            ease: 'Quad.easeOut'
+        });
+
+        // 2. Spawn Fireball at Dragon Head
+        const startX = this.dragon.x;
+        const startY = this.dragon.y - 75;
+        const fireball = this.add.sprite(startX, startY, stage.fireballKey);
+        fireball.setDepth(22);
+        fireball.setScale(stage.fireballScale);
+        fireball.setOrigin(0.5, 0.5);
+
+        // 3. Fireball Particle Trail
+        const trailEmitter = this.add.particles(startX, startY, 'ember', {
+            speed: { min: 40, max: 120 },
+            angle: { min: 70, max: 110 },
+            scale: { start: stage.fireballScale * 0.7, end: 0.05 },
+            alpha: { start: 0.9, end: 0 },
+            lifespan: 360,
+            blendMode: 'ADD',
+            frequency: 30
+        });
+        trailEmitter.setDepth(21);
+
+        // Target vanishing point along current flight lane
+        const endLaneX = CONFIG.VANISHING_X + (this.currentLane - 1) * 45;
+        const endY = CONFIG.HORIZON_Y;
+
+        // 4. Perspective Flight Tween (Shrinks into distance)
+        this.tweens.add({
+            targets: fireball,
+            x: endLaneX,
+            y: endY,
+            scaleX: 0.16,
+            scaleY: 0.16,
+            rotation: Math.PI * 4,
+            duration: stage.fireballSpeed,
+            ease: 'Quad.easeIn',
+            onUpdate: () => {
+                trailEmitter.setPosition(fireball.x, fireball.y);
+            },
+            onComplete: () => {
+                // Horizon impact explosion burst
+                this.createFireballExplosion(endLaneX, endY, stage);
+                trailEmitter.stop();
+                this.time.delayedCall(400, () => trailEmitter.destroy());
+                fireball.destroy();
+            }
+        });
+    }
+
+    createFireballExplosion(x, y, stage) {
+        // Shockwave ring
+        const shock = this.add.graphics().setDepth(23);
+        shock.lineStyle(3, 0xffedd5, 1);
+        shock.strokeCircle(x, y, 10);
+
+        this.tweens.add({
+            targets: shock,
+            alpha: 0,
+            scaleX: stage.stage * 1.8,
+            scaleY: stage.stage * 1.8,
+            duration: 220,
+            onComplete: () => shock.destroy()
+        });
+
+        // Fiery burst particles
+        const burst = this.add.particles(x, y, 'ember', {
+            speed: { min: 80, max: 240 * stage.stage * 0.7 },
+            scale: { start: 0.6 * stage.stage, end: 0.05 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 350,
+            blendMode: 'ADD',
+            emitting: false
+        });
+        burst.setDepth(24);
+        burst.explode(16 + stage.stage * 8, x, y);
+        this.time.delayedCall(400, () => burst.destroy());
+    }
+
+    // ------------------------------------------------------------
+    // KEYBOARD CONTROLS
     // ------------------------------------------------------------
     setupKeyboardControls() {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
 
-        // Single press event listeners
         this.input.keyboard.on('keydown-LEFT', () => this.shiftLane(-1));
         this.input.keyboard.on('keydown-A', () => this.shiftLane(-1));
 
         this.input.keyboard.on('keydown-RIGHT', () => this.shiftLane(+1));
         this.input.keyboard.on('keydown-D', () => this.shiftLane(+1));
+
+        // Attack hotkeys: Spacebar & Enter
+        this.input.keyboard.on('keydown-SPACE', () => this.attack());
+        this.input.keyboard.on('keydown-ENTER', () => this.attack());
     }
 
     // ------------------------------------------------------------
-    // HIGH-RESOLUTION ON-SCREEN TOUCH CONTROLS
+    // TOP EVOLUTION SELECTOR BAR (Replaced old text header)
     // ------------------------------------------------------------
-    createOnScreenControls() {
-        const btnY = CONFIG.GAME_HEIGHT - 120;
-        const btnW = 210;
-        const btnH = 115;
+    createTopEvolutionBar() {
+        const topBarW = 660;
+        const topBarH = 78;
+        const barY = 56;
 
-        // Left Arrow Button (Bottom-Left)
-        this.btnLeft = this.createDirectionButton(160, btnY, '◀ LEFT', -1, btnW, btnH);
+        // Container centered at x = 800
+        const barContainer = this.add.container(CONFIG.GAME_WIDTH / 2, barY).setDepth(35);
 
-        // Right Arrow Button (Bottom-Right)
-        this.btnRight = this.createDirectionButton(CONFIG.GAME_WIDTH - 160, btnY, 'RIGHT ▶', +1, btnW, btnH);
+        // Sleek translucent glass background
+        const barBg = this.add.graphics();
+        barBg.fillStyle(0x0a0812, 0.88);
+        barBg.fillRoundedRect(-topBarW / 2, -topBarH / 2, topBarW, topBarH, 24);
+        barBg.lineStyle(2.5, 0xf97316, 0.65);
+        barBg.strokeRoundedRect(-topBarW / 2, -topBarH / 2, topBarW, topBarH, 24);
+        barContainer.add(barBg);
+
+        // 3 Evolution Buttons positioned inside the top bar
+        this.stageButtons = [];
+        const btnW = 190;
+        const btnH = 58;
+        const spacing = 210; // offset between buttons
+
+        DRAGON_STAGES.forEach((stage, idx) => {
+            const btnX = (idx - 1) * spacing; // -210, 0, +210
+            const container = this.add.container(btnX, 0);
+
+            const bg = this.add.graphics();
+            container.add(bg);
+
+            const label = this.add.text(0, 0, `${stage.icon} ${stage.shortName}`, {
+                fontFamily: 'Impact, "Arial Black", sans-serif',
+                fontSize: '24px',
+                color: '#ffffff',
+                letterSpacing: 1
+            }).setOrigin(0.5, 0.5);
+            container.add(label);
+
+            container.setSize(btnW, btnH);
+            container.setInteractive({ useHandCursor: true });
+
+            container.on('pointerdown', () => {
+                this.setDragonStage(idx);
+            });
+
+            barContainer.add(container);
+            this.stageButtons.push({ container, bg, label, stage, w: btnW, h: btnH });
+        });
+
+        this.updateStageUI();
+    }
+
+    // ------------------------------------------------------------
+    // BOTTOM CONTROLS: [ ◀ LEFT ]  [ 🔥 ATTACK ]  [ RIGHT ▶ ]
+    // ------------------------------------------------------------
+    createBottomControls() {
+        const btnY = CONFIG.GAME_HEIGHT - 110;
+        const navBtnW = 220;
+        const navBtnH = 105;
+
+        // 1. Left Arrow Button (Bottom-Left)
+        this.btnLeft = this.createDirectionButton(180, btnY, '◀ LEFT', -1, navBtnW, navBtnH);
+
+        // 2. Attack Button (Bottom-Middle)
+        const atkBtnW = 280;
+        const atkBtnH = 110;
+        this.btnAttack = this.createAttackButton(CONFIG.GAME_WIDTH / 2, btnY, '🔥 ATTACK', atkBtnW, atkBtnH);
+
+        // 3. Right Arrow Button (Bottom-Right)
+        this.btnRight = this.createDirectionButton(CONFIG.GAME_WIDTH - 180, btnY, 'RIGHT ▶', +1, navBtnW, navBtnH);
     }
 
     createDirectionButton(x, y, labelText, direction, w, h) {
@@ -451,8 +628,58 @@ class DragonFlightScene extends Phaser.Scene {
         return container;
     }
 
+    createAttackButton(x, y, labelText, w, h) {
+        const container = this.add.container(x, y).setDepth(35);
+
+        const bg = this.add.graphics();
+        // Fiery molten red-orange base
+        bg.fillStyle(0x8a1808, 0.92);
+        bg.fillRoundedRect(-w / 2, -h / 2, w, h, 26);
+        bg.lineStyle(4, 0xf97316, 0.95);
+        bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 26);
+        container.add(bg);
+
+        const text = this.add.text(0, 0, labelText, {
+            fontFamily: 'Impact, "Arial Black", sans-serif',
+            fontSize: '34px',
+            color: '#ffedd5',
+            letterSpacing: 2
+        }).setOrigin(0.5, 0.5);
+        container.add(text);
+
+        container.setSize(w, h);
+        container.setInteractive({ useHandCursor: true });
+
+        container.on('pointerdown', () => {
+            bg.clear();
+            bg.fillStyle(0xf97316, 1);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 26);
+            bg.lineStyle(4, 0xffedd5, 1);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 26);
+            text.setColor('#180702');
+
+            container.setScale(0.96);
+            this.attack();
+        });
+
+        const resetBtn = () => {
+            bg.clear();
+            bg.fillStyle(0x8a1808, 0.92);
+            bg.fillRoundedRect(-w / 2, -h / 2, w, h, 26);
+            bg.lineStyle(4, 0xf97316, 0.95);
+            bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 26);
+            text.setColor('#ffedd5');
+            container.setScale(1.0);
+        };
+
+        container.on('pointerup', resetBtn);
+        container.on('pointerout', resetBtn);
+
+        return container;
+    }
+
     // ------------------------------------------------------------
-    // EVOLUTION STAGE SWITCHER & HIGH-RES HUD
+    // EVOLUTION STAGE SWITCHER & TOAST
     // ------------------------------------------------------------
     setDragonStage(stageIndex) {
         if (stageIndex < 0 || stageIndex >= DRAGON_STAGES.length) return;
@@ -485,72 +712,7 @@ class DragonFlightScene extends Phaser.Scene {
         this.showEvolutionToast(stage);
     }
 
-    createHUD() {
-        // Top Header Bar
-        const topBg = this.add.graphics();
-        topBg.fillStyle(0x0a0812, 0.88);
-        topBg.fillRoundedRect(320, 20, 960, 92, 24);
-        topBg.lineStyle(2.5, 0xf97316, 0.6);
-        topBg.strokeRoundedRect(320, 20, 960, 92, 24);
-        topBg.setDepth(30);
-
-        // Title / Lane status
-        this.titleText = this.add.text(800, 48, '🔥 FIRE DRAGON • MIDDLE LANE', {
-            fontFamily: 'Impact, "Arial Black", sans-serif',
-            fontSize: '32px',
-            color: '#f97316',
-            letterSpacing: 2
-        }).setOrigin(0.5, 0.5).setDepth(31);
-
-        this.subtitleText = this.add.text(800, 84, 'Press ◀ Left / Right ▶ Arrows or Touch Buttons to Change Lanes', {
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: '18px',
-            color: '#fdba74'
-        }).setOrigin(0.5, 0.5).setDepth(31);
-
-        // Bottom Evolution Stage Selector Buttons
-        this.createStageSelectorButtons();
-    }
-
-    createStageSelectorButtons() {
-        const btnW = 180;
-        const btnH = 68;
-        const startX = 520;
-        const btnY = CONFIG.GAME_HEIGHT - 65;
-
-        this.stageButtons = [];
-        DRAGON_STAGES.forEach((stage, idx) => {
-            const bx = startX + idx * (btnW + 24);
-            const container = this.add.container(bx, btnY).setDepth(35);
-
-            const bg = this.add.graphics();
-            container.add(bg);
-
-            const label = this.add.text(0, 0, `${stage.icon} ${stage.shortName}`, {
-                fontFamily: 'Impact, "Arial Black", sans-serif',
-                fontSize: '24px',
-                color: '#ffffff',
-                letterSpacing: 1
-            }).setOrigin(0.5, 0.5);
-            container.add(label);
-
-            container.setSize(btnW, btnH);
-            container.setInteractive({ useHandCursor: true });
-
-            container.on('pointerdown', () => {
-                this.setDragonStage(idx);
-            });
-
-            this.stageButtons.push({ container, bg, label, stage, w: btnW, h: btnH });
-        });
-
-        this.updateStageUI();
-    }
-
     updateStageUI() {
-        const stage = DRAGON_STAGES[this.currentStageIndex];
-        this.updateLaneHUD();
-
         this.stageButtons.forEach((b, idx) => {
             const isSelected = idx === this.currentStageIndex;
             b.bg.clear();
@@ -561,33 +723,24 @@ class DragonFlightScene extends Phaser.Scene {
                 b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
                 b.label.setColor('#ffffff');
             } else {
-                b.bg.fillStyle(0x180b1e, 0.88);
+                b.bg.fillStyle(0x180b1e, 0.85);
                 b.bg.fillRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
-                b.bg.lineStyle(2, 0xf97316, 0.4);
+                b.bg.lineStyle(2, 0xf97316, 0.35);
                 b.bg.strokeRoundedRect(-b.w / 2, -b.h / 2, b.w, b.h, 18);
                 b.label.setColor('#cbd5e1');
             }
         });
     }
 
-    updateLaneHUD() {
-        const stage = DRAGON_STAGES[this.currentStageIndex];
-        const laneName = CONFIG.LANE_NAMES[this.currentLane];
-        if (this.titleText) {
-            this.titleText.setText(`🔥 ${stage.name.toUpperCase()} • ${laneName} LANE`);
-            this.titleText.setColor(stage.titleColor);
-        }
-    }
-
     showEvolutionToast(stage) {
         if (this.toastContainer) this.toastContainer.destroy();
 
-        this.toastContainer = this.add.container(800, 155).setDepth(40);
+        this.toastContainer = this.add.container(CONFIG.GAME_WIDTH / 2, 135).setDepth(40);
         const toastBg = this.add.graphics();
         toastBg.fillStyle(0x180b1e, 0.94);
-        toastBg.fillRoundedRect(-260, -32, 520, 64, 32);
+        toastBg.fillRoundedRect(-240, -28, 480, 56, 28);
         toastBg.lineStyle(2.5, 0xf97316, 0.9);
-        toastBg.strokeRoundedRect(-260, -32, 520, 64, 32);
+        toastBg.strokeRoundedRect(-240, -28, 480, 56, 28);
         this.toastContainer.add(toastBg);
 
         const toastText = this.add.text(0, 0, `✨ Stage ${stage.stage}: ${stage.name}`, {
@@ -602,10 +755,10 @@ class DragonFlightScene extends Phaser.Scene {
         this.tweens.add({
             targets: this.toastContainer,
             alpha: 1,
-            y: 150,
+            y: 130,
             duration: 250,
             yoyo: true,
-            hold: 1800,
+            hold: 1600,
             onComplete: () => {
                 if (this.toastContainer) this.toastContainer.destroy();
             }

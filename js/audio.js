@@ -543,6 +543,84 @@ class SoundManager {
             try { navigator.vibrate([40, 30, 80]); } catch (e) {}
         }
     }
+
+    // 💥 Fireball attack blast sound (customized for Baby, Teen, and Mature)
+    playFireball(stageIndex = 0) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+
+        if (stageIndex === 0) {
+            // Baby: crisp cute fiery pop & whoosh
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.06);
+            osc.frequency.exponentialRampToValueAtTime(180, now + 0.16);
+
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.19);
+        } else if (stageIndex === 1) {
+            // Teen: crackling flame whoosh & roaring sweep
+            const osc1 = this.ctx.createOscillator();
+            const gain1 = this.ctx.createGain();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(280, now);
+            osc1.frequency.exponentialRampToValueAtTime(540, now + 0.08);
+            osc1.frequency.exponentialRampToValueAtTime(90, now + 0.28);
+
+            gain1.gain.setValueAtTime(0.38, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+            osc1.connect(gain1);
+            gain1.connect(this.ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.31);
+        } else {
+            // Mature: deep roaring inferno detonation & heavy boom
+            const osc1 = this.ctx.createOscillator();
+            const gain1 = this.ctx.createGain();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(160, now);
+            osc1.frequency.linearRampToValueAtTime(320, now + 0.08);
+            osc1.frequency.exponentialRampToValueAtTime(40, now + 0.42);
+
+            gain1.gain.setValueAtTime(0.5, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+            osc1.connect(gain1);
+            gain1.connect(this.ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.46);
+
+            // Sub rumble
+            const sub = this.ctx.createOscillator();
+            const subGain = this.ctx.createGain();
+            sub.type = 'triangle';
+            sub.frequency.setValueAtTime(80, now);
+            sub.frequency.exponentialRampToValueAtTime(25, now + 0.38);
+
+            subGain.gain.setValueAtTime(0.4, now);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+            sub.connect(subGain);
+            subGain.connect(this.ctx.destination);
+            sub.start(now);
+            sub.stop(now + 0.41);
+        }
+
+        if (navigator.vibrate) {
+            try { navigator.vibrate(stageIndex === 2 ? [30, 20, 50] : [20]); } catch (e) {}
+        }
+    }
 }
 
 window.soundManager = new SoundManager();
