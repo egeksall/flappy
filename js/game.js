@@ -47,6 +47,7 @@ const DRAGON_STAGES = [
         fireballKey: 'fireball_baby',
         fireballScale: 0.95,
         fireballSpeed: 520,
+        mouthOffsetY: 175,
         frameWidth: 257,
         frameHeight: 219,
         tailOffset: { x: 0, y: 78 },
@@ -67,6 +68,7 @@ const DRAGON_STAGES = [
         fireballKey: 'fireball_teen',
         fireballScale: 1.15,
         fireballSpeed: 490,
+        mouthOffsetY: 215,
         frameWidth: 340,
         frameHeight: 282,
         tailOffset: { x: 0, y: 110 },
@@ -87,6 +89,7 @@ const DRAGON_STAGES = [
         fireballKey: 'fireball_mature',
         fireballScale: 1.45,
         fireballSpeed: 460,
+        mouthOffsetY: 260,
         frameWidth: 486,
         frameHeight: 351,
         tailOffset: { x: 0, y: 145 },
@@ -410,13 +413,28 @@ class DragonFlightScene extends Phaser.Scene {
             ease: 'Quad.easeOut'
         });
 
-        // 2. Spawn Fireball at Dragon Head
-        const startX = this.dragon.x;
-        const startY = this.dragon.y - 75;
+        // 2. Spawn Fireball clearly ahead of Dragon's head
+        const startY = this.dragon.y - stage.mouthOffsetY;
+        const t = Math.max(0, (startY - CONFIG.HORIZON_Y) / (CONFIG.DRAGON_Y - CONFIG.HORIZON_Y));
+        const startX = CONFIG.VANISHING_X + (this.dragon.x - CONFIG.VANISHING_X) * t;
+
         const fireball = this.add.sprite(startX, startY, stage.fireballKey);
         fireball.setDepth(22);
         fireball.setScale(stage.fireballScale);
         fireball.setOrigin(0.5, 0.5);
+
+        // Muzzle spawn spark flash ahead of dragon
+        const spawnBurst = this.add.particles(startX, startY, 'ember', {
+            speed: { min: 60, max: 140 },
+            scale: { start: stage.fireballScale * 0.5, end: 0.05 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 220,
+            blendMode: 'ADD',
+            emitting: false
+        });
+        spawnBurst.setDepth(23);
+        spawnBurst.explode(8, startX, startY);
+        this.time.delayedCall(250, () => spawnBurst.destroy());
 
         // 3. Fireball Particle Trail
         const trailEmitter = this.add.particles(startX, startY, 'ember', {
@@ -430,9 +448,9 @@ class DragonFlightScene extends Phaser.Scene {
         });
         trailEmitter.setDepth(21);
 
-        // Target vanishing point along current flight lane
-        const endLaneX = CONFIG.VANISHING_X + (this.currentLane - 1) * 45;
-        const endY = CONFIG.HORIZON_Y;
+        // Target vanishing point along current flight lane into distance
+        const endLaneX = CONFIG.VANISHING_X + (this.currentLane - 1) * 35;
+        const endY = CONFIG.HORIZON_Y - 40;
 
         // 4. Perspective Flight Tween (Shrinks into distance)
         this.tweens.add({
