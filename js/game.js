@@ -47,7 +47,7 @@ const DRAGON_STAGES = [
         fireballKey: 'fireball_baby',
         fireballScale: 0.95,
         fireballSpeed: 520,
-        mouthOffsetY: 175,
+        mouthOffsetY: 118,
         frameWidth: 257,
         frameHeight: 219,
         tailOffset: { x: 0, y: 78 },
@@ -68,7 +68,7 @@ const DRAGON_STAGES = [
         fireballKey: 'fireball_teen',
         fireballScale: 1.15,
         fireballSpeed: 490,
-        mouthOffsetY: 215,
+        mouthOffsetY: 148,
         frameWidth: 340,
         frameHeight: 282,
         tailOffset: { x: 0, y: 110 },
@@ -89,7 +89,7 @@ const DRAGON_STAGES = [
         fireballKey: 'fireball_mature',
         fireballScale: 1.45,
         fireballSpeed: 460,
-        mouthOffsetY: 260,
+        mouthOffsetY: 180,
         frameWidth: 486,
         frameHeight: 351,
         tailOffset: { x: 0, y: 145 },
@@ -143,6 +143,9 @@ class PreloadScene extends Phaser.Scene {
         this.load.image('fireball_teen', 'assets/fireballs/fireball_teen.png');
         this.load.image('fireball_mature', 'assets/fireballs/fireball_mature.png');
 
+        // Load Sheep Sprite (Food)
+        this.load.image('sheep', 'assets/sheep.png');
+
         // Load Landscape Background & Particles
         this.load.image('landscape_bg', 'assets/dragon_rear/landscape_bg.png');
         this.load.image('ember', 'assets/dragon/ember.png');
@@ -180,6 +183,12 @@ class DragonFlightScene extends Phaser.Scene {
         this.hoverTime = 0;
         this.lastAttackTime = 0;
         this.activeFireballs = [];
+
+        // Sheep Food & Evolution System
+        this.sheepList = [];
+        this.sheepEaten = 0;
+        this.SHEEP_EVOLVE_TARGET = 3;
+        this.nextSheepSpawnTime = 1600; // ms to first sheep spawn
 
         // Sound manager
         if (window.soundManager) {
@@ -219,6 +228,7 @@ class DragonFlightScene extends Phaser.Scene {
         // 6. Setup Controls (Keyboard + Touch UI)
         this.setupKeyboardControls();
         this.createTopEvolutionBar();
+        this.createFoodEvolutionMeter();
         this.createBottomControls();
 
         // Welcome Toast
@@ -422,6 +432,8 @@ class DragonFlightScene extends Phaser.Scene {
         fireball.setDepth(22);
         fireball.setScale(stage.fireballScale);
         fireball.setOrigin(0.5, 0.5);
+        fireball.lane = this.currentLane;
+        this.activeFireballs.push(fireball);
 
         // Muzzle spawn spark flash ahead of dragon
         const spawnBurst = this.add.particles(startX, startY, 'ember', {
@@ -466,6 +478,10 @@ class DragonFlightScene extends Phaser.Scene {
                 trailEmitter.setPosition(fireball.x, fireball.y);
             },
             onComplete: () => {
+                // Remove from active list
+                const fbIdx = this.activeFireballs.indexOf(fireball);
+                if (fbIdx !== -1) this.activeFireballs.splice(fbIdx, 1);
+
                 // Horizon impact explosion burst
                 this.createFireballExplosion(endLaneX, endY, stage);
                 trailEmitter.stop();
@@ -569,6 +585,7 @@ class DragonFlightScene extends Phaser.Scene {
             container.setInteractive({ useHandCursor: true });
 
             container.on('pointerdown', () => {
+                this.sheepEaten = 0;
                 this.setDragonStage(idx);
             });
 
@@ -577,6 +594,52 @@ class DragonFlightScene extends Phaser.Scene {
         });
 
         this.updateStageUI();
+    }
+
+    // ------------------------------------------------------------
+    // FOOD & EVOLUTION STATUS CAPSULE
+    // ------------------------------------------------------------
+    createFoodEvolutionMeter() {
+        const meterW = 560;
+        const meterH = 38;
+        const meterY = 114;
+
+        this.foodMeterContainer = this.add.container(CONFIG.GAME_WIDTH / 2, meterY).setDepth(35);
+
+        this.foodMeterBg = this.add.graphics();
+        this.foodMeterBg.fillStyle(0x0c0714, 0.92);
+        this.foodMeterBg.fillRoundedRect(-meterW / 2, -meterH / 2, meterW, meterH, 19);
+        this.foodMeterBg.lineStyle(2, 0xf97316, 0.75);
+        this.foodMeterBg.strokeRoundedRect(-meterW / 2, -meterH / 2, meterW, meterH, 19);
+        this.foodMeterContainer.add(this.foodMeterBg);
+
+        this.foodMeterText = this.add.text(0, 0, '', {
+            fontFamily: 'Impact, "Arial Black", sans-serif',
+            fontSize: '20px',
+            color: '#ffedd5',
+            letterSpacing: 1
+        }).setOrigin(0.5, 0.5);
+        this.foodMeterContainer.add(this.foodMeterText);
+
+        this.updateFoodEvolutionMeter();
+    }
+
+    updateFoodEvolutionMeter() {
+        if (!this.foodMeterText) return;
+
+        if (this.currentStageIndex < 2) {
+            const nextStage = DRAGON_STAGES[this.currentStageIndex + 1];
+            let sheepIcons = '';
+            for (let i = 0; i < this.SHEEP_EVOLVE_TARGET; i++) {
+                sheepIcons += (i < this.sheepEaten) ? '🐑 ' : '⚪ ';
+            }
+            this.foodMeterText.setText(`🍖 FOOD: ${sheepIcons} (${this.sheepEaten}/${this.SHEEP_EVOLVE_TARGET} ➔ ${nextStage.shortName} ${nextStage.icon})`);
+            this.foodMeterText.setColor('#ffedd5');
+        } else {
+            // Mature: Final Form!
+            this.foodMeterText.setText(`👑 FINAL FORM: APEX MATURE DRAGON (FEAST: ${this.sheepEaten} 🐑)`);
+            this.foodMeterText.setColor('#fde047');
+        }
     }
 
     // ------------------------------------------------------------
@@ -727,6 +790,7 @@ class DragonFlightScene extends Phaser.Scene {
         this.tailEmitter.setScale({ start: stage.flameParticleScale, end: 0.1 });
 
         this.updateStageUI();
+        this.updateFoodEvolutionMeter();
         this.showEvolutionToast(stage);
     }
 
@@ -753,7 +817,7 @@ class DragonFlightScene extends Phaser.Scene {
     showEvolutionToast(stage) {
         if (this.toastContainer) this.toastContainer.destroy();
 
-        this.toastContainer = this.add.container(CONFIG.GAME_WIDTH / 2, 135).setDepth(40);
+        this.toastContainer = this.add.container(CONFIG.GAME_WIDTH / 2, 160).setDepth(40);
         const toastBg = this.add.graphics();
         toastBg.fillStyle(0x180b1e, 0.94);
         toastBg.fillRoundedRect(-240, -28, 480, 56, 28);
@@ -773,12 +837,251 @@ class DragonFlightScene extends Phaser.Scene {
         this.tweens.add({
             targets: this.toastContainer,
             alpha: 1,
-            y: 130,
+            y: 155,
             duration: 250,
             yoyo: true,
             hold: 1600,
             onComplete: () => {
                 if (this.toastContainer) this.toastContainer.destroy();
+            }
+        });
+    }
+
+    // ------------------------------------------------------------
+    // SHEEP SPAWNING, APPROACH & EVOLUTION MECHANICS
+    // ------------------------------------------------------------
+    spawnSheep() {
+        const lane = Phaser.Math.Between(0, 2);
+        const horizonY = CONFIG.HORIZON_Y;
+        const startX = CONFIG.VANISHING_X - 70 + (lane + 0.5) * 46;
+
+        const sheep = this.add.sprite(startX, horizonY, 'sheep');
+        sheep.setOrigin(0.5, 0.95);
+        sheep.lane = lane;
+        sheep.progress = 0; // 0.0 at horizon, 1.0 at dragon depth (Y = 560)
+        sheep.speed = 0.00034; // ~2.9 seconds to fly from horizon to dragon
+        sheep.setDepth(16);
+        sheep.setScale(0.12);
+        sheep.setAlpha(0.2);
+        sheep.bobPhase = Math.random() * Math.PI * 2;
+        sheep.eaten = false;
+
+        this.sheepList.push(sheep);
+    }
+
+    updateSheep(delta) {
+        // 1. Spawning Timer
+        const now = this.time.now;
+        if (now >= this.nextSheepSpawnTime) {
+            this.spawnSheep();
+            this.nextSheepSpawnTime = now + Phaser.Math.Between(2600, 4200);
+        }
+
+        // 2. Approach, Scale & Collision
+        for (let i = this.sheepList.length - 1; i >= 0; i--) {
+            const sheep = this.sheepList[i];
+            if (!sheep.active || sheep.eaten) continue;
+
+            sheep.progress += sheep.speed * delta;
+            const p = sheep.progress;
+
+            // Pseudo-3D perspective projection
+            const persp = Math.pow(p, 2.1);
+            const curY = CONFIG.HORIZON_Y + (CONFIG.DRAGON_Y - CONFIG.HORIZON_Y) * persp;
+            const startX = CONFIG.VANISHING_X - 70 + (sheep.lane + 0.5) * 46;
+            const endX = CONFIG.LANE_X[sheep.lane];
+            const curX = startX + (endX - startX) * persp;
+            const curScale = 0.12 + (1.0 - 0.12) * persp;
+
+            sheep.x = curX;
+            sheep.y = curY;
+            sheep.setScale(curScale);
+            sheep.setAlpha(Math.min(1.0, p * 3.5));
+
+            // Cute walking bob
+            sheep.bobPhase += delta * 0.012;
+            sheep.y += Math.sin(sheep.bobPhase) * (curScale * 4);
+
+            // Correct depth sorting: in front of ground, and behind or in front of dragon
+            sheep.setDepth(curY > this.dragon.y ? 21 : 16);
+
+            // 3. Contact Collision with Dragon in same lane
+            if (p >= 0.86 && p <= 1.10 && !sheep.eaten) {
+                if (this.currentLane === sheep.lane) {
+                    this.eatSheep(sheep, i);
+                    continue;
+                }
+            }
+
+            // 4. Fireball Attack Collision (blast in same lane)
+            for (let fIdx = this.activeFireballs.length - 1; fIdx >= 0; fIdx--) {
+                const fb = this.activeFireballs[fIdx];
+                if (fb && fb.active && fb.lane === sheep.lane && !sheep.eaten) {
+                    const distY = Math.abs(fb.y - sheep.y);
+                    if (distY < 50) {
+                        this.roastSheepWithFireball(sheep, i, fb);
+                        break;
+                    }
+                }
+            }
+
+            // 5. Cleanup when past screen bottom
+            if (p > 1.45 || sheep.y > CONFIG.GAME_HEIGHT + 100) {
+                sheep.destroy();
+                this.sheepList.splice(i, 1);
+            }
+        }
+    }
+
+    eatSheep(sheep, index) {
+        sheep.eaten = true;
+        this.sheepList.splice(index, 1);
+
+        // Sound effect
+        if (window.soundManager && window.soundManager.playEatSheep) {
+            window.soundManager.playEatSheep();
+        }
+
+        // Dragon chomp animation
+        this.tweens.add({
+            targets: this.dragon,
+            scaleX: 1.14,
+            scaleY: 0.88,
+            duration: 80,
+            yoyo: true,
+            ease: 'Quad.easeOut'
+        });
+
+        // Floating indicator
+        this.createFloatingFoodNotice(sheep.x, sheep.y - 40, '+1 🍖 YUM!');
+
+        // Sparkle bite burst
+        const biteBurst = this.add.particles(sheep.x, sheep.y, 'ember', {
+            speed: { min: 60, max: 180 },
+            scale: { start: 0.8, end: 0.05 },
+            alpha: { start: 1, end: 0 },
+            lifespan: 300,
+            blendMode: 'ADD',
+            emitting: false
+        });
+        biteBurst.setDepth(25);
+        biteBurst.explode(14, sheep.x, sheep.y);
+        this.time.delayedCall(350, () => biteBurst.destroy());
+
+        // Sheep squash and disappear
+        this.tweens.add({
+            targets: sheep,
+            scaleX: 0,
+            scaleY: 0,
+            alpha: 0,
+            duration: 110,
+            onComplete: () => sheep.destroy()
+        });
+
+        // Food counter & Evolution trigger
+        this.sheepEaten++;
+        this.updateFoodEvolutionMeter();
+
+        // 3 sheep trigger evolution
+        if (this.currentStageIndex < 2 && this.sheepEaten >= this.SHEEP_EVOLVE_TARGET) {
+            this.sheepEaten = 0;
+            const nextStageIndex = this.currentStageIndex + 1;
+            this.setDragonStage(nextStageIndex);
+            this.showBigEvolutionBanner(DRAGON_STAGES[nextStageIndex]);
+        }
+    }
+
+    roastSheepWithFireball(sheep, index, fireball) {
+        sheep.eaten = true;
+        this.sheepList.splice(index, 1);
+
+        if (window.soundManager && window.soundManager.playEatSheep) {
+            window.soundManager.playEatSheep();
+        }
+
+        const stage = DRAGON_STAGES[this.currentStageIndex];
+        this.createFireballExplosion(sheep.x, sheep.y, stage);
+        this.createFloatingFoodNotice(sheep.x, sheep.y - 40, '🔥 ROASTED! +1 🍖');
+
+        this.tweens.add({
+            targets: sheep,
+            scaleX: 0,
+            scaleY: 0,
+            alpha: 0,
+            duration: 100,
+            onComplete: () => sheep.destroy()
+        });
+
+        this.sheepEaten++;
+        this.updateFoodEvolutionMeter();
+
+        if (this.currentStageIndex < 2 && this.sheepEaten >= this.SHEEP_EVOLVE_TARGET) {
+            this.sheepEaten = 0;
+            const nextStageIndex = this.currentStageIndex + 1;
+            this.setDragonStage(nextStageIndex);
+            this.showBigEvolutionBanner(DRAGON_STAGES[nextStageIndex]);
+        }
+    }
+
+    createFloatingFoodNotice(x, y, message) {
+        const foodText = this.add.text(x, y, message, {
+            fontFamily: 'Impact, "Arial Black", sans-serif',
+            fontSize: '28px',
+            color: '#fef08a',
+            stroke: '#180702',
+            strokeThickness: 5
+        }).setOrigin(0.5, 0.5).setDepth(30);
+
+        this.tweens.add({
+            targets: foodText,
+            y: y - 60,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            alpha: 0,
+            duration: 700,
+            ease: 'Quad.easeOut',
+            onComplete: () => foodText.destroy()
+        });
+    }
+
+    showBigEvolutionBanner(stage) {
+        if (this.evoBannerContainer) this.evoBannerContainer.destroy();
+
+        this.evoBannerContainer = this.add.container(CONFIG.GAME_WIDTH / 2, 210).setDepth(45);
+        const bg = this.add.graphics();
+        bg.fillStyle(0x180702, 0.95);
+        bg.fillRoundedRect(-320, -45, 640, 90, 30);
+        bg.lineStyle(4, 0xf97316, 1);
+        bg.strokeRoundedRect(-320, -45, 640, 90, 30);
+        this.evoBannerContainer.add(bg);
+
+        const title = this.add.text(0, -12, `⚡ EVOLUTION COMPLETE! ⚡`, {
+            fontFamily: 'Impact, "Arial Black", sans-serif',
+            fontSize: '26px',
+            color: '#fde047',
+            letterSpacing: 2
+        }).setOrigin(0.5, 0.5);
+        this.evoBannerContainer.add(title);
+
+        const sub = this.add.text(0, 20, `${stage.icon} ${stage.name} Unlocked!`, {
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: '#ffffff'
+        }).setOrigin(0.5, 0.5);
+        this.evoBannerContainer.add(sub);
+
+        this.evoBannerContainer.setScale(0.3);
+        this.tweens.add({
+            targets: this.evoBannerContainer,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            duration: 320,
+            ease: 'Back.easeOut',
+            hold: 1900,
+            yoyo: true,
+            onComplete: () => {
+                if (this.evoBannerContainer) this.evoBannerContainer.destroy();
             }
         });
     }
@@ -801,6 +1104,9 @@ class DragonFlightScene extends Phaser.Scene {
         const tx = this.dragon.x + stage.tailOffset.x;
         const ty = this.dragon.y + stage.tailOffset.y;
         this.tailEmitter.setPosition(tx, ty);
+
+        // 4. Update Sheep Food Spawning, Movement & Collisions
+        this.updateSheep(delta);
     }
 }
 

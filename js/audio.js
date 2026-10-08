@@ -621,6 +621,51 @@ class SoundManager {
             try { navigator.vibrate(stageIndex === 2 ? [30, 20, 50] : [20]); } catch (e) {}
         }
     }
+
+    // 🐑 Sheep eaten sound: crunchy bite & cheerful gulp chime
+    playEatSheep() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+
+        // 1. Crunchy bite snap (two quick crunches)
+        [0, 0.045].forEach((tOffset, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(320 - i * 60, now + tOffset);
+            osc.frequency.exponentialRampToValueAtTime(70, now + tOffset + 0.06);
+
+            gain.gain.setValueAtTime(0.35, now + tOffset);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + tOffset + 0.07);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + tOffset);
+            osc.stop(now + tOffset + 0.08);
+        });
+
+        // 2. Cheerful gulp / swallow bell chime
+        const bell = this.ctx.createOscillator();
+        const bellGain = this.ctx.createGain();
+        bell.type = 'triangle';
+        bell.frequency.setValueAtTime(587.33, now + 0.08); // D5
+        bell.frequency.exponentialRampToValueAtTime(880, now + 0.18); // A5
+
+        bellGain.gain.setValueAtTime(0.25, now + 0.08);
+        bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+        bell.connect(bellGain);
+        bellGain.connect(this.ctx.destination);
+        bell.start(now + 0.08);
+        bell.stop(now + 0.3);
+
+        if (navigator.vibrate) {
+            try { navigator.vibrate([25, 20, 35]); } catch (e) {}
+        }
+    }
 }
 
 window.soundManager = new SoundManager();
