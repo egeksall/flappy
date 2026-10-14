@@ -26,26 +26,30 @@
 html, body {
     width: 100%;
     height: 100%;
+    margin: 0;
+    padding: 0;
     overflow: hidden;
-    background: radial-gradient(circle at 50% 20%, var(--bg-dark-2) 0%, var(--bg-dark-1) 100%);
+    background: #000000;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--text-main);
     touch-action: manipulation;
     overscroll-behavior: none;
     -webkit-touch-callout: none;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /* Master Wrapper */
 #app-layout {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
+    width: 100dvw;
+    height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 36px;
     position: relative;
-    background: radial-gradient(ellipse at bottom, #1b2838 0%, #080d15 100%);
+    background: #000000;
+    overflow: hidden;
 }
 
 /* Ambient glow & particles background */
@@ -65,20 +69,20 @@ html, body {
     100% { transform: scale(1.15) translate(5%, 5%); opacity: 1; }
 }
 
-/* Game Canvas Container - Landscape 16:9 */
+/* Game Canvas Container - Portrait Mobile Showcase */
 #game-wrapper {
     position: relative;
     width: 100%;
     height: 100%;
-    max-width: 1080px;
-    max-height: 608px;
-    aspect-ratio: 16 / 9;
+    max-width: 440px;
+    max-height: 820px;
+    aspect-ratio: 9 / 16;
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 5;
     box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
+    border-radius: 28px;
     overflow: hidden;
     background-color: #0c0812;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -218,31 +222,70 @@ html, body {
     background: linear-gradient(135deg, #0ea5e9, #0284c7);
 }
 
-/* Fullscreen Mobile Viewport Overrides */
-@media (max-width: 950px) {
+/* Fullscreen Toggle Button */
+#fullscreen-btn {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    z-index: 1000;
+    background: rgba(14, 8, 22, 0.85);
+    border: 1.5px solid rgba(249, 115, 22, 0.8);
+    color: #ffedd5;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.15s, background 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#fullscreen-btn:active {
+    transform: scale(0.95);
+    background: rgba(249, 115, 22, 0.4);
+}
+
+/* Desktop / Mobile Viewport Overrides */
+@media (max-width: 900px) {
     #desktop-companion {
         display: none !important;
     }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1050px) {
     #desktop-companion {
         display: block;
     }
 }
 
-@media (max-width: 600px), (max-height: 840px) {
+@media (max-width: 600px) {
     #app-layout {
-        padding: 0;
-        background: #000000;
+        gap: 0 !important;
+        padding: 0 !important;
+        background: #000000 !important;
     }
 
     #game-wrapper {
-        max-width: 100vw;
-        max-height: 100vh;
-        width: 100vw;
-        height: 100vh;
-        border-radius: 0;
-        box-shadow: none;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        aspect-ratio: auto !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    #game-container {
+        width: 100% !important;
+        height: 100% !important;
     }
 }

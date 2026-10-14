@@ -14,21 +14,26 @@
     <title>Fire Dragon - 3-Lane Flight & Evolution</title>
     
     <!-- Icons -->
-    <link rel="icon" type="image/png" href="assets/icon.png">
-    <link rel="apple-touch-icon" href="assets/icon.png">
+    <link rel="icon" type="image/png" href="assets/world/icon.png">
+    <link rel="apple-touch-icon" href="assets/world/icon.png">
     <link rel="manifest" href="manifest.json">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=6.0">
     
     <!-- Phaser 3 (Bundled Offline Engine) -->
-    <script src="phaser.min.js"></script>
+    <script src="js/lib/phaser.min.js"></script>
 </head>
 <body>
+    <!-- Fullscreen Toggle Button -->
+    <button id="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+        <span class="fs-icon">⛶</span> <span class="fs-text">Fullscreen</span>
+    </button>
+
     <div id="app-layout">
         <div class="ambient-glow"></div>
 
-        <!-- 16:9 Landscape Game Canvas Frame -->
+        <!-- Portrait Mobile Game Canvas Frame -->
         <main id="game-wrapper">
             <div id="game-container"></div>
         </main>
@@ -36,40 +41,97 @@
         <!-- Desktop Showcase & Controls Guide Panel -->
         <aside id="desktop-companion">
             <header class="companion-header">
-                <img src="assets/icon.png" alt="Baby Fire Dragon">
+                <img src="assets/world/icon.png" alt="Dragon Runner">
                 <div>
-                    <h3>Fire Dragon</h3>
-                    <p>Third-Person Forward Flight</p>
+                    <h3>Dragon Evolution</h3>
+                    <p>3-Lane Flight & Evolution</p>
                 </div>
             </header>
             
             <div class="companion-badge">
-                <span class="dot">●</span> 3-Lane Landscape Flight
+                <span class="dot">●</span> 3-Lane Portrait Flight
             </div>
 
             <div class="companion-section">
                 <h4>Movement Controls</h4>
                 <ul class="feature-list">
-                    <li><span class="icon">⬅️</span> <strong>Left Arrow / A</strong>: Move 1 Lane Left</li>
-                    <li><span class="icon">➡️</span> <strong>Right Arrow / D</strong>: Move 1 Lane Right</li>
-                    <li><span class="icon">📱</span> <strong>On-Screen Buttons</strong>: [ ◀ ] and [ ▶ ]</li>
+                    <li><span class="icon">⬅️</span> <strong>Left / A / Swipe</strong>: Steer Left</li>
+                    <li><span class="icon">➡️</span> <strong>Right / D / Swipe</strong>: Steer Right</li>
+                    <li><span class="icon">🔥</span> <strong>Space / Tap / Attack</strong>: Dragon Blast</li>
+                    <li><span class="icon">☄️</span> <strong>E / Circle Button</strong>: Super Ability (Charge 5 kills for 3s of lane destruction)</li>
+                    <li><span class="icon">📱</span> <strong>On-Screen Touch Buttons</strong>: [ ◀ ], [ Attack ], [ ▶ ], [ ⚡ SUPER ]</li>
                     <li><span class="icon">🛣️</span> <strong>3 Fixed Lanes</strong>: Left | Middle | Right</li>
                 </ul>
             </div>
 
             <div class="companion-section">
-                <h4>Evolution Stages</h4>
+                <h4>RPG Dragon Progression</h4>
                 <ul class="feature-list">
-                    <li><span class="icon">🐣</span> 1. Baby Fire Dragon</li>
-                    <li><span class="icon">⚡</span> 2. Teen Fire Dragon</li>
-                    <li><span class="icon">👑</span> 3. Mature Fire Dragon</li>
+                    <li><span class="icon">❤️</span> <strong>Health</strong>: 500 Dragon HP (Enemies hit for 100+ DMG)</li>
+                    <li><span class="icon">⭐</span> <strong>Level Up</strong>: Max Level 20! Choose 1 of 3 Blessings on level up</li>
+                    <li><span class="icon">🐣</span> 1. Baby Form: <strong>100 DMG</strong> (Reach Level 5 ➔ Teen)</li>
+                    <li><span class="icon">🐲</span> <strong>Hatchling Ally (Lv 5+)</strong>: Summons baby dragon companion to auto-attack enemies in your lane!</li>
+                    <li><span class="icon">⚡</span> 2. Teen Form: <strong>150 DMG</strong> (Reach Level 10 ➔ Mature)</li>
+                    <li><span class="icon">👑</span> 3. Mature Form: <strong>200 DMG</strong> (Apex Elder Form, Level 20 Cap)</li>
+                    <li><span class="icon">🍖</span> <strong>Sheep</strong>: Eat to heal +100 HP and earn +35 EXP</li>
+                </ul>
+            </div>
+
+            <div class="companion-section">
+                <h4>Human Enemies & Escalation</h4>
+                <ul class="feature-list">
+                    <li><span class="icon">🔮</span> <strong>Arch-Mage</strong>: 500 HP (Arcane Orbs)</li>
+                    <li><span class="icon">🏹</span> <strong>Royal Archer</strong>: 650 HP (Flaming Arrows)</li>
+                    <li><span class="icon">🛡️</span> <strong>Iron Guard</strong>: 800 HP (Heavy Javelins)</li>
+                    <li><span class="icon">⏱️</span> <strong>Reinforcements</strong>: Enemies level up every 30s & hit harder</li>
+                    <li><span class="icon">🏃</span> <strong>Dodge</strong>: Shift lanes to avoid incoming enemy strikes</li>
+                    <li><span class="icon">🪵</span> <strong>Traps</strong>: Indestructible! Dodge or suffer 100 damage</li>
                 </ul>
             </div>
         </aside>
     </div>
 
     <!-- Scripts -->
-    <script src="js/audio.js?v=3.0"></script>
-    <script src="js/game.js?v=3.0"></script>
+    <script src="js/audio/audio.js?v=13.0"></script>
+    <script src="js/logic/game.js?v=13.0"></script>
+    <script>
+        function toggleFullscreen() {
+            const doc = document;
+            const docEl = document.documentElement;
+            const isFS = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
+            if (!isFS) {
+                if (docEl.requestFullscreen) docEl.requestFullscreen().catch(()=>{});
+                else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+            } else {
+                if (doc.exitFullscreen) doc.exitFullscreen().catch(()=>{});
+                else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+            }
+        }
+        function updateFsBtn() {
+            const btnText = document.querySelector('#fullscreen-btn .fs-text');
+            const btnIcon = document.querySelector('#fullscreen-btn .fs-icon');
+            const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            if (btnText && btnIcon) {
+                btnText.textContent = isFS ? 'Exit' : 'Fullscreen';
+                btnIcon.textContent = isFS ? '✕' : '⛶';
+            }
+            // Trigger Phaser canvas resize to fit new height
+            if (window.game && window.game.scale) {
+                setTimeout(() => window.game.scale.refresh(), 100);
+            }
+        }
+        document.addEventListener('fullscreenchange', updateFsBtn);
+        document.addEventListener('webkitfullscreenchange', updateFsBtn);
+        window.addEventListener('resize', () => {
+            if (window.game && window.game.scale) {
+                window.game.scale.refresh();
+            }
+        });
+        window.addEventListener('orientationchange', () => {
+            if (window.game && window.game.scale) {
+                setTimeout(() => window.game.scale.refresh(), 200);
+            }
+        });
+    </script>
 </body>
 </html>
